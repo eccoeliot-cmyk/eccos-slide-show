@@ -17,8 +17,8 @@ The quality of the stories improves with the capability of the language model. F
 The slideshow begins after a short warm-up phase (which typically lasts between 2 and 5 minutes, depending on your computer). Once it starts, you will see slide transitions, hear ambient sounds—such as coughing, the clinking of glasses, or other background noises—and observe graphical elements like snowflakes, confetti, or stars appearing, perfectly matched to each scene.
 
 Available in multiple languages.
-still in development
-Everything Local
+still in development.
+Everything Local.
 
 All graphics, music, and sound are AI-generated.
 
