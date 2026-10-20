@@ -18,6 +18,7 @@ The slideshow begins after a short warm-up phase (which typically lasts between 
 
 Available in multiple languages.
 still in development
+Everything Local
 
 All graphics, music, and sound are AI-generated.
 
