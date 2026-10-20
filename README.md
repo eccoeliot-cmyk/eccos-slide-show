@@ -1,5 +1,7 @@
 # diashow-vortrag — Diavortrag im Browser (LM Studio Plugin)
 
+![Startseite, Aufwärmen des Projektors und Dias eines Vortrags über Fußball](docs/slideshow.jpg)
+
 ## Was es macht
 
 Eine Webseite (http://127.0.0.1:8430), auf der du in der Mitte ein **Thema** eingibst, darunter mit einem
