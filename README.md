@@ -15,6 +15,9 @@ The slideshow begins after a brief warm-up phase (typically taking between 2 and
 Once it starts, you’ll see slide transitions, hear ambient sounds like an audience coughing, and watch as sprites appear to match the scene.
 
 Available in multiple languages.
+still in development
+
+All graphics, music, and sound are AI-generated.
 
 ## How to use
 
