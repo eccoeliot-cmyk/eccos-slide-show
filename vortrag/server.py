@@ -736,15 +736,48 @@ def wiederholt(text: str, vorher: list[str]) -> bool:
     return False
 
 
+# Häufige Wörter je Sprache – erkennen, ob ein Text in der falschen Sprache kam (gemessen 2026-10-21: englischer
+# Vortrag „The Beautiful Game“, Überschriften englisch, Sprechtext von Dia 5 und 7 deutsch).
+STOPPWOERTER = {
+    "de": {"der", "die", "das", "und", "ist", "nicht", "ein", "eine", "mit", "auf", "für", "von", "zu", "den", "dem",
+           "sich", "auch", "wie", "wir", "sie", "im", "es", "war", "wurde", "noch", "einen", "seine", "ihre"},
+    "en": {"the", "and", "is", "of", "to", "in", "that", "it", "was", "with", "for", "as", "on", "are", "this", "they",
+           "his", "were", "but", "from", "by", "an", "their", "we", "you", "has", "have", "who"},
+    "fr": {"le", "la", "les", "et", "est", "des", "une", "un", "du", "que", "qui", "dans", "pour", "pas", "sur", "au",
+           "ce", "il", "elle", "nous", "vous", "son", "sa", "ses", "aux", "avec", "mais"},
+    "es": {"el", "la", "los", "las", "y", "es", "de", "que", "en", "un", "una", "por", "con", "para", "del", "se",
+           "no", "su", "sus", "al", "lo", "como", "pero", "fue", "muy", "más"},
+    "it": {"il", "la", "le", "e", "è", "di", "che", "un", "una", "per", "con", "non", "del", "della", "sono", "gli",
+           "nel", "nella", "si", "ha", "anche", "come", "ma", "più", "suo", "sua"},
+    "pt": {"o", "a", "os", "as", "e", "é", "de", "que", "um", "uma", "para", "com", "não", "do", "da", "em", "no",
+           "na", "se", "seu", "sua", "mais", "como", "mas", "foi", "dos", "das"},
+}
+
+
+def sprache_passt(text: str, sprache: str) -> bool:
+    """Ist der Text erkennbar in der gewünschten Sprache? Im Zweifel ja – verworfen wird nur, was deutlich nach einer
+    anderen Sprache aussieht."""
+    buchstaben = re.findall(r"[^\W\d_]", text)
+    if not buchstaben:
+        return True
+    kyrillisch = sum(1 for b in buchstaben if "Ѐ" <= b <= "ӿ") / len(buchstaben)
+    if sprache == "ru" or kyrillisch > 0.5:
+        return (kyrillisch > 0.5) == (sprache == "ru")
+    woerter = _woerter(text)
+    treffer = {s: sum(1 for w in woerter if w in liste) for s, liste in STOPPWOERTER.items()}
+    beste = max(treffer, key=treffer.get)
+    return beste == sprache or treffer[beste] < 3 or treffer.get(sprache, 0) * 2 > treffer[beste]
+
+
 ROLLEN = {
-    "aufbau": "AUFBAU – steigere Neugier und Spannung; jedes Dia ein wenig erstaunlicher als das vorige, führe auf den "
-              "Höhepunkt zu (gelegentlich darf ein Satz neugierig auf das Kommende machen).",
-    "hoehepunkt": "HÖHEPUNKT – der faszinierendste, bewegendste Moment des ganzen Vortrags: lebendige, bildhafte Sprache, "
-                  "kraftvolle Sätze, Staunen. Das soll den Zuschauern in Erinnerung bleiben.",
-    "ausklang": "AUSKLANG nach dem Höhepunkt – ruhiger: was bedeutet das, was bleibt, wie wirkt es bis heute.",
-    "schluss": "SCHLUSS – fasse in einem Satz zusammen und ende warm, positiv und hoffnungsvoll mit einem schönen "
-               "Gedanken, der mit dem Leben der Zuschauer zu tun hat, damit sie mit einem guten Gefühl gehen. Der "
-               "letzte Satz dankt dem Publikum.",
+    "aufbau": "BUILD-UP – raise curiosity and suspense; each slide a little more astonishing than the one before, lead "
+              "towards the climax (now and then a sentence may make the audience curious about what is coming).",
+    "hoehepunkt": "CLIMAX – the most fascinating, moving moment of the whole talk: vivid, pictorial language, powerful "
+                  "sentences, wonder. The audience should remember this.",
+    "ausklang": "AFTERMATH after the climax – calmer: what does it mean, what remains, how does it still matter today.",
+    "schluss": "CONCLUSION – sum up in one sentence and end warmly, positively and hopefully with a beautiful thought "
+               "connected to the audience's own lives, so they leave with a good feeling. The last sentence thanks "
+               "the audience.",
 }
 
 
@@ -953,7 +986,7 @@ class Vortrag:
             self._melden("Die Gliederung entsteht …")
             # Das Modell liefert manchmal viel weniger Punkte als verlangt (gemessen 2026-10-20: 5 statt 11 – der
             # Vortrag wäre nur halb so lang geworden). Dann einmal mit der konkreten Zahl nachfragen, das längere zählt.
-            g, auftrag = None, f"Thema: {self.thema}\nAnzahl der Dias: {self.geplant}\n{self._sprachhinweis()}"
+            g, auftrag = None, f"Topic: {self.thema}\nNumber of slides: {self.geplant}\n{self._sprachhinweis()}"
             for versuch in range(2):
                 neu = qwen_json(self._p(GLIEDERUNG_SYSTEM), auftrag, {
                     "titel": TEXT, "untertitel": TEXT, "stil": TEXT, "titel_prompt": TEXT, "schluss_prompt": TEXT,
@@ -968,8 +1001,9 @@ class Vortrag:
                 if n >= round(self.geplant * 0.85):
                     break
                 log(f"Gliederung: nur {n} von {self.geplant} Punkten – frage nach")
-                auftrag = (f"Thema: {self.thema}\nAnzahl der Dias: {self.geplant}\n{self._sprachhinweis()}\nACHTUNG: Die Liste \"kapitel\" muss "
-                           f"GENAU {self.geplant} Einträge haben (ein Eintrag je Dia) – der letzte Versuch hatte nur {n}.")
+                auftrag = (f"Topic: {self.thema}\nNumber of slides: {self.geplant}\nATTENTION: the list \"kapitel\" must "
+                           f"have EXACTLY {self.geplant} entries (one per slide) – the last attempt had only {n}.\n"
+                           f"{self._sprachhinweis()}")
             plan = [s for s in g.get("sprites", []) if isinstance(s, dict) and str(s.get("prompt", "")).strip()][:4]
             if not self.mit_figuren:
                 plan = []
@@ -985,9 +1019,12 @@ class Vortrag:
             hp = hoehepunkt_pruefen(g.get("hoehepunkt"), len(kapitel))
             self._melden("Die Gliederung wird gegengeprüft …")
             kapitel = self._gliederung_pruefen(kapitel, hp)
+            titel, untertitel = g["titel"].strip(), g["untertitel"].strip()
+            if not sprache_passt(" ".join([titel, untertitel, *kapitel]), self.sprache):
+                titel, untertitel, *kapitel = self._uebersetzen([titel, untertitel, *kapitel])
             with self.sperre:
                 self.gliederung_fertig = True
-                self.titel, self.untertitel = g["titel"].strip(), g["untertitel"].strip()
+                self.titel, self.untertitel = titel, untertitel
                 self.kapitel = kapitel
                 self.geplant = len(kapitel)
                 self.hoehepunkt = hp
@@ -1036,8 +1073,8 @@ class Vortrag:
         for durchgang in range(2):
             liste = "\n".join(f"{i}. {t}" for i, t in enumerate(kapitel, 1))
             try:
-                erg = qwen_json(self._p(LEKTOR_GLIEDERUNG_SYSTEM), f"Thema: {self.thema}\nAnzahl der Punkte: {len(kapitel)}\n"
-                                f"Höhepunkt: Punkt {hp}\n\nEntwurf der Gliederung:\n{liste}{hinweis}",
+                erg = qwen_json(self._p(LEKTOR_GLIEDERUNG_SYSTEM), f"Topic: {self.thema}\nNumber of points: {len(kapitel)}\n"
+                                f"Climax: point {hp}\n\nDraft outline:\n{liste}{hinweis}\n\n{self._sprachhinweis()}",
                                 {"probleme": {"type": "array", "items": TEXT}, "kapitel": {"type": "array", "items": TEXT}},
                                 temperatur=0.3, max_tokens=4500, timeout=120)
             except Exception as exc:  # noqa: BLE001
@@ -1048,14 +1085,17 @@ class Vortrag:
             if len(neu) != len(kapitel):
                 log(f"Lektor Gliederung: {len(neu)} statt {len(kapitel)} Punkte – Entwurf bleibt")
                 return kapitel
+            if not sprache_passt(" ".join(neu), self.sprache):
+                log("Lektor Gliederung: falsche Sprache – Entwurf bleibt")
+                return kapitel
             if probleme:
                 log(f"Lektor Gliederung: {'; '.join(probleme)}")
             kapitel = neu
             doppelt = doppelte_punkte(kapitel)
             if not doppelt:
                 break
-            hinweis = ("\n\nACHTUNG – diese Punkte sind noch doppelt, ersetze jeweils den späteren durch einen neuen, "
-                       "gut bekannten Aspekt des Themas: " + "; ".join(f"{a} und {b}" for a, b in doppelt))
+            hinweis = ("\n\nATTENTION – these points are still duplicates, replace the later one of each pair with a new, "
+                       "well-known aspect of the topic: " + "; ".join(f"{a} and {b}" for a, b in doppelt))
         return kapitel
 
     def _bild_prompt_neu(self, text: str, alt: str) -> str:
@@ -1063,26 +1103,44 @@ class Vortrag:
             erg = qwen_json("You write ONE English image prompt, 25-45 words, that shows what a slide's narration is "
                             "about: concrete subject, setting, composition, light. Square composition. No text, no "
                             "letters, no captions, no logos, no charts, no maps. Answer only with JSON: \"prompt\".",
-                            f"Thema: {self.thema}\nSprechtext des Dias: {text}", {"prompt": TEXT}, temperatur=0.5,
+                            f"Topic: {self.thema}\nNarration of the slide: {text}", {"prompt": TEXT}, temperatur=0.5,
                             max_tokens=200, timeout=30)
             return str(erg.get("prompt", "")).strip() or alt
         except Exception as exc:  # noqa: BLE001
             log(f"Neuer Bildauftrag: {exc}")
             return alt
 
+    def _uebersetzen(self, texte: list[str]) -> list[str]:
+        """Letzter Ausweg, wenn das Modell trotz Hinweis in der falschen Sprache schrieb: Wort für Wort in die
+        Vortragssprache übersetzen lassen. Klappt das nicht, bleibt der Text, wie er ist."""
+        ziel = SPRACHEN[self.sprache][0]
+        try:
+            erg = qwen_json(f"You translate texts into natural spoken {ziel}. Keep meaning, names and length; translate "
+                            f"every text of the list in order. Answer only with JSON: \"texte\" (list of {ziel} strings).",
+                            json.dumps(texte, ensure_ascii=False), {"texte": {"type": "array", "items": TEXT}},
+                            temperatur=0.2, max_tokens=1500, timeout=45)
+            neu = [str(t).strip() for t in erg.get("texte", [])]
+            if len(neu) == len(texte) and all(neu) and sprache_passt(" ".join(neu), self.sprache):
+                log(f"Übersetzt nach {ziel}: {texte[0][:60]} …")
+                return neu
+            log(f"Übersetzung nach {ziel} unbrauchbar – Text bleibt")
+        except Exception as exc:  # noqa: BLE001
+            log(f"Übersetzung nach {ziel}: {exc}")
+        return texte
+
     def _dia_pruefen(self, k: int, kap: str, f: dict, vorher: list[str], letztes: bool, rolle: str) -> dict:
         """Lektor-Durchgang über ein Dia: Widersprüche, Logik, Wiederholungen, zweifelhafte Fakten, Rolle im
         Spannungsbogen. Taugt die Korrektur nicht (zu kurz, wiederholt), bleibt der Entwurf."""
         liste = "\n".join(f"{i}. {t}" for i, t in enumerate(self.kapitel, 1))
-        bisher = "\n".join(f"Dia {i}: {t}" for i, t in enumerate(vorher, 1)) or "(noch nichts – das ist das erste Dia)"
-        lage = "das ERSTE Dia" if k == 1 else ("das LETZTE Dia" if letztes else f"Dia {k}")
-        auftrag = (f"Thema: {self.thema}\nTitel: {self.titel}\nGliederung:\n{liste}\n\n"
-                   f"Dieses Dia ist {lage}, Gliederungspunkt: {kap}\nRolle im Spannungsbogen: {ROLLEN[rolle]}\n\n"
-                   f"Bisher gesagt:\n{bisher}\n\n"
-                   f"Entwurf – text: {f['text']}\nEntwurf – prompt: {f.get('prompt', '')}\n"
-                   f"Bildeinstellung für dieses Dia: {self._einstellung(k, rolle)}\n"
-                   f"Bisherige Bilder:\n{self._bisherige_bilder()}\n\n"
-                   f"{self._atmosphaere_hinweis(f['text'])}")
+        bisher = "\n".join(f"Slide {i}: {t}" for i, t in enumerate(vorher, 1)) or "(nothing yet – this is the first slide)"
+        lage = "the FIRST slide" if k == 1 else ("the LAST slide" if letztes else f"slide {k}")
+        auftrag = (f"Topic: {self.thema}\nTitle: {self.titel}\nOutline:\n{liste}\n\n"
+                   f"This is {lage}, outline point: {kap}\nRole in the dramatic arc: {ROLLEN[rolle]}\n\n"
+                   f"Said so far:\n{bisher}\n\n"
+                   f"Draft – text: {f['text']}\nDraft – prompt: {f.get('prompt', '')}\n"
+                   f"Camera framing for this slide: {self._einstellung(k, rolle)}\n"
+                   f"Previous pictures:\n{self._bisherige_bilder()}\n\n"
+                   f"{self._atmosphaere_hinweis(f['text'])}\n\n{self._sprachhinweis()}")
         try:
             erg = qwen_json(self._p(LEKTOR_DIA_SYSTEM.format(wmin=WOERTER[0], wmax=WOERTER[1])), auftrag,
                             {"probleme": {"type": "array", "items": TEXT}, "text": TEXT, "prompt": TEXT,
@@ -1093,8 +1151,8 @@ class Vortrag:
         effekt, sprite = self._atmosphaere_lesen(k, erg)
         text = textlaenge_begrenzen(str(erg.get("text", "")).strip())
         probleme = [str(p).strip() for p in erg.get("probleme", []) if str(p).strip()]
-        if len(text.split()) < 12 or wiederholt(text, vorher):
-            log(f"Lektor Dia {k}: Korrektur unbrauchbar – Entwurf bleibt")
+        if len(text.split()) < 12 or wiederholt(text, vorher) or not sprache_passt(text, self.sprache):
+            log(f"Lektor Dia {k}: Korrektur unbrauchbar (zu kurz, wiederholt oder falsche Sprache) – Entwurf bleibt")
             return {**f, "effekt": effekt, "sprite": sprite}
         if probleme or text != f["text"]:
             log(f"Lektor Dia {k}: {'; '.join(probleme) or 'umformuliert'}")
@@ -1135,29 +1193,36 @@ class Vortrag:
             if rolle == "hoehepunkt":
                 hp_erreicht = True
             liste = "\n".join(f"{i}. {t}" for i, t in enumerate(self.kapitel, 1))
-            auftrag = (f"Thema: {self.thema}\nTitel des Vortrags: {self.titel}\n{self._sprachhinweis()}\n"
-                       f"Gliederung:\n{liste}\n\n"
-                       f"Schreibe jetzt Dia {k}: {kap}\nRolle im Spannungsbogen: {ROLLEN[rolle]}\n"
-                       f"Bildeinstellung für dieses Dia: {self._einstellung(k, rolle)}\n"
-                       f"Bisherige Bilder (das neue muss anders aussehen):\n{self._bisherige_bilder()}\n")
+            auftrag = (f"Topic: {self.thema}\nTitle of the talk: {self.titel}\n"
+                       f"Outline:\n{liste}\n\n"
+                       f"Now write slide {k}: {kap}\nRole in the dramatic arc: {ROLLEN[rolle]}\n"
+                       f"Camera framing for this slide: {self._einstellung(k, rolle)}\n"
+                       f"Previous pictures (the new one must look different):\n{self._bisherige_bilder()}\n")
             if k == 1:
-                auftrag += "Das ist das ERSTE Dia: führe kurz und neugierig machend ins Thema ein.\n"
+                auftrag += "This is the FIRST slide: introduce the topic briefly and make the audience curious.\n"
             if vorher:
-                auftrag += ("\nDie letzten Dias sagten (nur zur Orientierung – übernimm daraus KEINEN Satz und beginne "
-                            "anders):\n" + "\n".join(f"- {t}" for t in vorher[-2:]))
+                auftrag += ("\nThe last slides said (for orientation only – take NO sentence from them and begin "
+                            "differently):\n" + "\n".join(f"- {t}" for t in vorher[-2:]) + "\n")
+            # Die Sprache steht zuletzt: das schwache Modell richtet sich nach dem Ende des Auftrags
+            sprachhinweis = f"\n{self._sprachhinweis()}"
             f = None
             for versuch in range(3):
                 try:
-                    f = qwen_json(self._p(FOLIE_SYSTEM.format(wmin=WOERTER[0], wmax=WOERTER[1])), auftrag,
+                    f = qwen_json(self._p(FOLIE_SYSTEM.format(wmin=WOERTER[0], wmax=WOERTER[1])), auftrag + sprachhinweis,
                                   {"text": TEXT, "prompt": TEXT}, temperatur=0.75 + 0.1 * versuch, max_tokens=700,
                                   timeout=45)
                     f["text"] = textlaenge_begrenzen(f["text"].strip())
                     gleich = next((p for p in self.bild_prompts[-4:] if aehnlichkeit(f.get("prompt", ""), p) > 0.6), None)
-                    if len(f["text"].split()) >= 12 and not wiederholt(f["text"], vorher) and (not gleich or versuch == 2):
+                    sprache_ok = sprache_passt(f["text"], self.sprache)
+                    if (len(f["text"].split()) >= 12 and not wiederholt(f["text"], vorher) and sprache_ok
+                            and (not gleich or versuch == 2)):
                         break
                     if gleich:
-                        auftrag += f"\nACHTUNG: Dein Bildauftrag ähnelt zu sehr diesem früheren Bild: {gleich} – zeige etwas anderes.\n"
-                    log(f"Dia {k}, Text (Versuch {versuch + 1}): zu kurz, wiederholt das vorige Dia oder gleiches Bild")
+                        auftrag += f"\nATTENTION: your image prompt is too similar to this earlier picture: {gleich} – show something else.\n"
+                    if not sprache_ok:
+                        sprachhinweis = (f"\nATTENTION: your last text was NOT in {SPRACHEN[self.sprache][0]}. "
+                                         f"{self._sprachhinweis()}")
+                    log(f"Dia {k}, Text (Versuch {versuch + 1}): zu kurz, wiederholt, gleiches Bild oder falsche Sprache")
                 except Exception as exc:  # noqa: BLE001
                     if self.abbruch.is_set():
                         return
@@ -1170,6 +1235,8 @@ class Vortrag:
                 letztes, rolle = True, "schluss"   # lieber sauber enden als hängen
                 f = {"text": SCHLUSS_ERSATZ.get(self.sprache, SCHLUSS_ERSATZ["de"]), "prompt": ""}
             else:
+                if not sprache_passt(f["text"], self.sprache):
+                    f["text"] = self._uebersetzen([f["text"]])[0]
                 f = self._dia_pruefen(k, kap, f, vorher, letztes, rolle)
             if "effekt" in f:   # vom Lektor gleich mitentschieden
                 effekt, sprite = f["effekt"], f["sprite"]
@@ -1264,8 +1331,9 @@ class Vortrag:
             roh.unlink(missing_ok=True)
 
     def _sprachhinweis(self) -> str:
-        return (f"Sprache des Vortrags: {SPRACHEN[self.sprache][0]} – alles, was das Publikum hört oder liest (Titel, "
-                f"Untertitel, Gliederung, Sprechtext), in dieser Sprache, egal in welcher Sprache das Thema geschrieben ist.")
+        ziel = SPRACHEN[self.sprache][0]
+        return (f"LANGUAGE OF THE TALK: {ziel}. Write everything the audience hears or reads (title, subtitle, outline, "
+                f"narration) in {ziel} only – no matter in which language the topic or these instructions are written.")
 
     def _p(self, system: str) -> str:
         """Anweisung an das Sprachmodell in der gewählten Vortragssprache (Platzhalter <SPRACHE>)."""
@@ -1293,7 +1361,7 @@ class Vortrag:
         return EINSTELLUNG_ROLLE.get(rolle) or EINSTELLUNGEN[self.einstellung_folge[(k - 1) % len(self.einstellung_folge)]]
 
     def _bisherige_bilder(self) -> str:
-        return "\n".join(f"- {p}" for p in self.bild_prompts[-4:]) or "(noch keine)"
+        return "\n".join(f"- {p}" for p in self.bild_prompts[-4:]) or "(none yet)"
 
     def _atmosphaere_hinweis(self, text: str) -> str:
         """Figurenliste und auffällige Wörter für die KI (gemessen 2026-10-20: „Raketen flogen im Krieg über den
@@ -1302,8 +1370,8 @@ class Vortrag:
         woerter = set(_woerter(text))
         auffaellig = sorted({w for w in woerter if any(w.startswith(st) for st in EFFEKT_WORTSTAEMME)})
         auffaellig += [n for n in namen if _woerter(n) and any(w.startswith(_woerter(n)[0][:5]) for w in woerter)]
-        return (f"Figuren des Vortrags: {', '.join(namen) if namen else '(keine)'}"
-                + (f"\nAuffällige Wörter im Text: {', '.join(auffaellig)}" if auffaellig else ""))
+        return (f"Figures of the talk: {', '.join(namen) if namen else '(none)'}"
+                + (f"\nNotable words in the text: {', '.join(auffaellig)}" if auffaellig else ""))
 
     def _atmosphaere_felder(self) -> dict:
         return {"effekt": {"type": "string", "enum": list(EFFEKTE)},
@@ -1321,8 +1389,8 @@ class Vortrag:
         """Eigener Aufruf nur, wenn der Lektor ausgefallen ist: passt ein Effekt (Schnee, Regen, Sterne …) oder eine
         der Figuren? Meistens nicht – dann bleibt die Bühne ruhig."""
         try:
-            erg = qwen_json(ATMOSPHAERE_SYSTEM, f"Thema: {self.thema}\n{self._atmosphaere_hinweis(text)}\n\n"
-                            f"Sprechtext des Dias: {text}", self._atmosphaere_felder(), temperatur=0.2, max_tokens=80,
+            erg = qwen_json(ATMOSPHAERE_SYSTEM, f"Topic: {self.thema}\n{self._atmosphaere_hinweis(text)}\n\n"
+                            f"Narration of the slide: {text}", self._atmosphaere_felder(), temperatur=0.2, max_tokens=80,
                             timeout=30)
         except Exception as exc:  # noqa: BLE001
             log(f"Atmosphäre Dia {k}: {exc}")
