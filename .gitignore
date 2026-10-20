@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.lmstudio/
+alt_chat_version/
+__pycache__/
+*.pyc
+*.log

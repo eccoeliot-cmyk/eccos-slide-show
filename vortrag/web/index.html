@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diavortrag</title>
+<style>
+  :root {
+    --grund: #0d0b09;
+    --karte: #1a1612;
+    --karte-rand: #3a3026;
+    --text: #efe6d6;
+    --leise: #a8998a;
+    --akzent: #e3a54a;
+    --akzent-dunkel: #b97d2c;
+    --licht: #f4ecd9;
+    --ok: #8fbf7a;
+    --warn: #e0b04f;
+    --fehler: #e07a5f;
+    --dia: min(64vh, 88vw);
+    --serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--grund);
+    color: var(--text);
+    font-family: var(--sans);
+    overflow: hidden;
+  }
+  button { font: inherit; cursor: pointer; }
+  .versteckt { display: none !important; }
+
+  /* ---------- Startseite ---------- */
+  #start {
+    position: fixed; inset: 0;
+    display: grid; place-items: center;
+    padding: 16px;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 38%, rgba(227,165,74,.13), transparent 70%),
+      var(--grund);
+    overflow-y: auto;
+  }
+  .karte {
+    width: min(640px, 100%);
+    background: var(--karte);
+    border: 1px solid var(--karte-rand);
+    border-radius: 18px;
+    padding: 34px 34px 26px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  }
+  .kopf { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .kopf svg { flex: none; }
+  h1 { font-family: var(--serif); font-weight: normal; font-size: 2.1rem; margin: 0; letter-spacing: .02em; }
+  .unterzeile { color: var(--leise); font-size: .95rem; margin-top: 2px; }
+  label.feld { display: block; font-size: .85rem; color: var(--leise); margin: 0 0 8px; letter-spacing: .04em; text-transform: uppercase; }
+  textarea {
+    width: 100%; min-height: 128px; resize: vertical;
+    background: #0f0d0b; color: var(--text);
+    border: 1px solid var(--karte-rand); border-radius: 12px;
+    padding: 14px 16px; font: 1.12rem/1.5 var(--serif);
+    outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  textarea:focus { border-color: var(--akzent); box-shadow: 0 0 0 3px rgba(227,165,74,.18); }
+  .laenge { margin-top: 24px; }
+  .laenge-kopf { display: flex; justify-content: space-between; align-items: baseline; }
+  .laenge-wert { font-family: var(--serif); font-size: 1.5rem; color: var(--akzent); }
+  input[type=range] { width: 100%; margin: 10px 0 2px; accent-color: var(--akzent); height: 28px; }
+  .skala { display: flex; justify-content: space-between; color: var(--leise); font-size: .78rem; }
+  .musik { margin-top: 22px; }
+  .wahl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .wahl input { position: absolute; opacity: 0; pointer-events: none; }
+  .wahl label {
+    display: block; text-align: center; padding: 10px 8px; border-radius: 10px;
+    border: 1px solid var(--karte-rand); color: var(--leise); font-size: .9rem; cursor: pointer;
+    transition: all .15s;
+  }
+  .wahl input:checked + label { border-color: var(--akzent); color: var(--text); background: rgba(227,165,74,.1); }
+  .wahl.zwei { grid-template-columns: repeat(2, 1fr); }
+  .wahl input[type=checkbox] + label::before { content: "○ "; }
+  .wahl input[type=checkbox]:checked + label::before { content: "● "; color: var(--akzent); }
+  .wahl input:focus-visible + label { box-shadow: 0 0 0 3px rgba(227,165,74,.3); }
+  #los {
+    width: 100%; margin-top: 26px; padding: 15px; border: 0; border-radius: 12px;
+    background: var(--akzent); color: #1b130a; font-size: 1.1rem; font-weight: 600; letter-spacing: .02em;
+    transition: background .15s, transform .1s;
+  }
+  #los:hover { background: #eeb45c; }
+  #los:active { transform: translateY(1px); }
+  #los:disabled { background: #5a4a36; color: #a8998a; cursor: wait; }
+  #startfehler { color: var(--fehler); margin-top: 12px; min-height: 1.2em; font-size: .95rem; }
+  .sprachwahl {
+    margin-left: auto; align-self: flex-start;
+    background: #0f0d0b; color: var(--text); border: 1px solid var(--karte-rand); border-radius: 8px;
+    padding: 6px 8px; font: inherit; font-size: .9rem; cursor: pointer;
+  }
+  .sprachwahl:focus-visible { outline: none; border-color: var(--akzent); box-shadow: 0 0 0 3px rgba(227,165,74,.18); }
+  .nebenknopf {
+    display: block; margin: 14px auto 0; padding: 7px 14px; border-radius: 999px;
+    background: transparent; color: var(--leise); border: 1px solid var(--karte-rand); font-size: .85rem;
+  }
+  .nebenknopf:hover { color: var(--text); border-color: var(--fehler); }
+  #abschied { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; background: var(--grund); padding: 16px; }
+  #abschied p { margin: 0; color: var(--text); text-align: center; line-height: 1.5; }
+  .dienste { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--karte-rand); font-size: .8rem; color: var(--leise); }
+  .dienste span::before { content: "●"; margin-right: 5px; color: var(--leise); }
+  .dienste .ok::before { color: var(--ok); }
+  .dienste .warn::before { color: var(--warn); }
+  .dienste .aus::before { color: var(--fehler); }
+
+  /* ---------- Projektor ---------- */
+  #projektor {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3.2vh; padding: 3vh 16px;
+    background: radial-gradient(ellipse 60% 60% at 50% 40%, #17130f, #050403 75%);
+    cursor: none;
+  }
+  #projektor.zeiger { cursor: default; }
+  .leinwand {
+    position: relative; width: var(--dia); height: var(--dia); flex: none;
+    overflow: hidden; border-radius: 3px;
+    box-shadow: 0 0 60px rgba(244,236,217,.10), 0 0 160px rgba(244,236,217,.06);
+  }
+  /* das leere Projektorlicht zwischen zwei Dias */
+  .lichtfeld {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, #fffaf0 0%, var(--licht) 55%, #d8ccb2 100%);
+    animation: flackern 0.18s steps(2) infinite;
+  }
+  .lichtfeld::after {   /* Staub auf der Linse */
+    content: ""; position: absolute; inset: 0; opacity: .23; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .2  0 0 0 1.4 -.55'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  @keyframes flackern { 0% { filter: brightness(1); } 50% { filter: brightness(.965); } }
+  .lichtfeld { transition: filter .7s ease; }
+  .leinwand.dunkel .lichtfeld { animation: none; filter: brightness(.07); }
+  .dia {
+    position: absolute; inset: 0;
+    transform: translateX(112%);
+    will-change: transform;
+  }
+  .dia img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(1.04) contrast(1.02); }
+  .dia.rein { transform: translateX(0); transition: transform .62s cubic-bezier(.2,.75,.25,1); }
+  .dia.raus { transform: translateX(-112%); transition: transform .5s cubic-bezier(.6,0,.85,.4); }
+  .dia .aufschrift {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 22% 7% 7%;
+    background: linear-gradient(transparent, rgba(0,0,0,.78));
+    text-align: center; text-shadow: 0 2px 12px rgba(0,0,0,.7);
+  }
+  .dia .aufschrift h2 { font-family: var(--serif); font-weight: normal; margin: 0; font-size: calc(var(--dia) * .072); line-height: 1.12; }
+  .dia .aufschrift p { margin: .6em 0 0; color: #e9dfcd; font-size: calc(var(--dia) * .032); font-style: italic; font-family: var(--serif); }
+  .dia .ende {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: rgba(0,0,0,.38);
+    font-family: var(--serif); font-size: calc(var(--dia) * .16); letter-spacing: .08em;
+    text-shadow: 0 4px 30px rgba(0,0,0,.8);
+  }
+  .vignette { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 calc(var(--dia) * .09) rgba(0,0,0,.45); }
+
+  .untertitel {
+    width: min(980px, 94vw); min-height: 18vh; text-align: center;
+    transition: opacity .5s;
+  }
+  .untertitel .ueberschrift {
+    color: var(--akzent); font-size: clamp(.78rem, 1.6vh, 1rem); letter-spacing: .22em; text-transform: uppercase; margin-bottom: 1.1vh;
+  }
+  .untertitel .satzbox { font-family: var(--serif); font-size: clamp(1.05rem, 2.65vh, 1.75rem); line-height: 1.45; }
+  .satz { color: rgba(239,230,214,.3); transition: color .35s; }
+  .satz.jetzt { color: #fff8ec; }
+  .satz.vorbei { color: rgba(239,230,214,.5); }
+
+  /* Atmosphäre (Schnee, Regen, Sterne …) und wandernde Figuren über allem außer den Bedienknöpfen */
+  #effekte { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+  #figuren { position: fixed; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+  #figuren img { position: absolute; left: 0; top: 0; will-change: transform; filter: drop-shadow(0 3px 6px rgba(0,0,0,.45)); }
+
+  #beenden {
+    position: fixed; top: 18px; right: 18px; z-index: 5;
+    padding: 10px 16px; border-radius: 999px;
+    background: rgba(20,16,12,.72); color: var(--text);
+    border: 1px solid rgba(239,230,214,.25);
+    backdrop-filter: blur(6px);
+    opacity: .28; transition: opacity .3s, background .2s;
+  }
+  #projektor.zeiger #beenden, #beenden:focus-visible, #beenden:hover { opacity: 1; }
+  #beenden:hover { background: rgba(160,60,40,.85); border-color: transparent; }
+  .regler {
+    position: fixed; right: 18px; bottom: 12px; z-index: 5;
+    display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+    background: rgba(20,16,12,.72); border: 1px solid rgba(239,230,214,.22); color: var(--text);
+    backdrop-filter: blur(6px); opacity: .28; transition: opacity .3s; cursor: pointer;
+  }
+  #projektor.zeiger .regler, .regler:hover, .regler:focus-within { opacity: 1; }
+  .regler input { width: 130px; accent-color: var(--akzent); cursor: pointer; }
+  .fuss {
+    position: fixed; left: 18px; bottom: 14px; font-size: .8rem; color: rgba(239,230,214,.42);
+    display: flex; gap: 14px; align-items: center;
+  }
+  .warten { color: var(--akzent); display: inline-flex; gap: 8px; align-items: center; }
+  .warten::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--akzent); animation: puls 1s ease-in-out infinite; }
+  @keyframes puls { 50% { opacity: .2; } }
+
+  .vorbereitung {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 10%;
+    color: #4a3c2a; font-family: var(--serif); font-size: calc(var(--dia) * .042); line-height: 1.4;
+  }
+  .vorbereitung small { display: block; margin-top: .8em; font-family: var(--sans); font-size: .55em; color: #6d5c45; }
+  .aufwaermen { width: 100%; }
+  .prozent { font-size: 2.3em; margin: .35em 0 .25em; color: #3a2d1d; font-variant-numeric: tabular-nums; }
+  .balken { height: calc(var(--dia) * .014); min-height: 6px; border-radius: 999px; background: rgba(74,60,42,.16); overflow: hidden; }
+  .balken > div { height: 100%; width: 0; background: linear-gradient(90deg, #c98f3c, #e3a54a); border-radius: inherit; transition: width .4s ease-out; }
+  .vorbereitung small.dauer { margin-top: .4em; color: #8a7760; font-variant-numeric: tabular-nums; }
+  .vorbereitung small.lange { color: #a0522d; }
+
+  #schluss {
+    position: fixed; inset: 0; z-index: 6; display: grid; place-items: center;
+    background: rgba(5,4,3,.82); padding: 16px;
+  }
+  #schluss .karte { text-align: center; }
+  #schluss h2 { font-family: var(--serif); font-weight: normal; font-size: 1.9rem; margin: 0 0 8px; }
+  #schluss p { color: var(--leise); margin: 0 0 22px; }
+  #schluss button { padding: 13px 22px; border-radius: 12px; border: 0; background: var(--akzent); color: #1b130a; font-weight: 600; }
+
+  @media (max-width: 560px) {
+    .karte { padding: 24px 18px 20px; }
+    h1 { font-size: 1.7rem; }
+    .wahl { grid-template-columns: 1fr; }
+    #projektor { --dia: min(56vh, 92vw); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dia.rein, .dia.raus { transition-duration: .01s; }
+    .lichtfeld { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= Startseite ================= -->
+<main id="start">
+  <div class="karte">
+    <div class="kopf">
+      <svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="5" y="16" width="30" height="20" rx="4" fill="none" stroke="#e3a54a" stroke-width="2.4"/>
+        <circle cx="13" cy="26" r="4.5" fill="none" stroke="#e3a54a" stroke-width="2.2"/>
+        <path d="M35 21 L44 16 V36 L35 31 Z" fill="#e3a54a" opacity=".85"/>
+        <rect x="19" y="10" width="12" height="7" rx="1.5" fill="none" stroke="#e3a54a" stroke-width="2"/>
+      </svg>
+      <div>
+        <h1 data-t="titel">Diavortrag</h1>
+        <div class="unterzeile" data-t="unterzeile">Thema eingeben, Länge wählen, Projektor an.</div>
+      </div>
+      <select id="sprache" class="sprachwahl" data-t-titel="sprache" aria-label="Sprache">
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="ru">Русский</option>
+      </select>
+    </div>
+
+    <label class="feld" for="thema" data-t="frage">Worum soll es gehen?</label>
+    <textarea id="thema" data-t-ph="platzhalter" placeholder="z. B. Die Geschichte des Kaffees – von Äthiopien bis ins Wiener Kaffeehaus" autofocus></textarea>
+
+    <div class="laenge">
+      <div class="laenge-kopf">
+        <label class="feld" for="minuten" data-t="laenge">Länge des Vortrags</label>
+        <span class="laenge-wert" id="minutenWert">10 Minuten</span>
+      </div>
+      <input type="range" id="minuten" min="5" max="30" step="1" value="10">
+      <div class="skala"><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span><span>30</span></div>
+    </div>
+
+    <div class="musik">
+      <label class="feld" data-t="musik">Hintergrundmusik</label>
+      <div class="wahl" role="radiogroup">
+        <input type="radio" name="musik" id="m-ordner" value="ordner" checked><label for="m-ordner" data-t="m_ordner">Aus dem Musikordner</label>
+        <input type="radio" name="musik" id="m-erzeugen" value="erzeugen"><label for="m-erzeugen" data-t="m_erzeugen">Passend erzeugen</label>
+        <input type="radio" name="musik" id="m-aus" value="aus"><label for="m-aus" data-t="m_aus">Keine Musik</label>
+      </div>
+    </div>
+
+    <div class="musik">
+      <label class="feld" data-t="extras">Extras</label>
+      <div class="wahl zwei">
+        <input type="checkbox" id="x-figuren" checked><label for="x-figuren" data-t="x_figuren">Wandernde Figuren</label>
+        <input type="checkbox" id="x-saal" checked><label for="x-saal" data-t="x_saal">Saal-Geräusche</label>
+      </div>
+    </div>
+
+    <button id="los" data-t="los">Projektor einschalten</button>
+    <div id="startfehler" role="alert"></div>
+    <div class="dienste" id="dienste"><span data-t="pruefe">Prüfe Dienste …</span></div>
+    <button id="programmEnde" class="nebenknopf" data-t="prog_ende">Programm beenden</button>
+  </div>
+</main>
+
+<div id="abschied" class="versteckt">
+  <div class="karte"><p id="abschiedText"></p></div>
+</div>
+
+<!-- ================= Projektor ================= -->
+<section id="projektor" class="versteckt" aria-live="polite">
+  <canvas id="effekte" aria-hidden="true"></canvas>
+  <div id="figuren" aria-hidden="true"></div>
+  <button id="beenden" data-t="stop">Vortrag beenden</button>
+  <div class="leinwand" id="leinwand">
+    <div class="lichtfeld"></div>
+    <div class="vorbereitung" id="vorbereitung">
+      <div class="aufwaermen">
+        <div data-t="warm">Der Projektor wärmt sich auf …</div>
+        <div class="prozent" id="prozent">0 %</div>
+        <div class="balken" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="balken"><div id="balkenFuellung"></div></div>
+        <small id="vorbereitungMeldung"></small>
+        <small class="dauer" id="vorbereitungDauer"></small>
+      </div>
+    </div>
+    <div class="vignette"></div>
+  </div>
+  <div class="untertitel" id="untertitel">
+    <div class="ueberschrift" id="ueberschrift"></div>
+    <div class="satzbox" id="satzbox"></div>
+  </div>
+  <div class="fuss"><span id="fortschritt"></span><span id="wartet" class="warten versteckt" data-t="wartet">Nächstes Dia wird eingelegt …</span></div>
+  <label class="regler" title="Lautstärke der Hintergrundmusik" data-t-titel="regler">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    <input type="range" id="musikRegler" min="0" max="100" step="1" aria-label="Lautstärke der Hintergrundmusik" data-t-titel="regler">
+  </label>
+</section>
+
+<div id="schluss" class="versteckt">
+  <div class="karte">
+    <h2 id="schlussTitel" data-t="danke">Vielen Dank!</h2>
+    <p id="schlussText">Der Vortrag ist zu Ende.</p>
+    <button id="nochmal" data-t="nochmal">Neuen Vortrag vorbereiten</button>
+  </div>
+</div>
+
+<audio id="stimme" preload="auto"></audio>
+<audio id="musikA" preload="auto"></audio>
+<audio id="musikB" preload="auto"></audio>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const schlafen = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const TITEL_MS = 7500, SCHLUSS_MS = 10000, PAUSE_MS = 1100;
+// Lautstärke der Hintergrundmusik: per Regler während des Vortrags einstellbar (Wunsch des Nutzers 2026-10-20),
+// gemerkt für das nächste Mal. Die Stufen (laut / leise unter der Stimme / hoch vor dem Höhepunkt) hängen daran.
+let musikRegler = 0.5;
+try { const v = parseFloat(localStorage.getItem("diashow-musik")); if (v >= 0 && v <= 1) musikRegler = v; } catch (e) {}
+const musikPegel = { laut: () => musikRegler * 0.64, leise: () => musikRegler * 0.24, hoch: () => Math.min(1, musikRegler * 1.02) };
+
+// ---------------- Sprache der App (Wunsch des Nutzers 2026-10-20) ----------------
+// Eine Auswahl für Oberfläche UND Vortrag (Text und Stimme). Nur Sprachen, die Qwen3-TTS spricht und die Wörter mit
+// Leerzeichen trennen. Beim Wechsel werden alle Texte der Seite sofort umgestellt.
+const TEXTE = {
+  de: {
+    seitentitel: "Diavortrag", titel: "Diavortrag", unterzeile: "Thema eingeben, Länge wählen, Projektor an.", sprache: "Sprache",
+    frage: "Worum soll es gehen?", platzhalter: "z. B. Die Geschichte des Kaffees – von Äthiopien bis ins Wiener Kaffeehaus",
+    laenge: "Länge des Vortrags", minuten: "{n} Minuten", musik: "Hintergrundmusik", m_ordner: "Aus dem Musikordner",
+    m_erzeugen: "Passend erzeugen", m_aus: "Keine Musik", extras: "Extras", x_figuren: "Wandernde Figuren",
+    x_saal: "Saal-Geräusche", los: "Projektor einschalten", pruefe: "Prüfe Dienste …", prog_ende: "Programm beenden",
+    prog_frage: "Programm wirklich beenden?",
+    prog_weg: "Das Programm ist beendet. Du kannst dieses Fenster schließen – beim nächsten Chat in LM Studio startet es wieder.",
+    d_llm: "Sprachmodell: {x}", d_llm_fehlt: "Kein Sprachmodell geladen – wird beim Start geladen", d_comfy: "Bilder: ComfyUI bereit",
+    d_comfy_aus: "ComfyUI startet beim Vortrag", st_bereit: "Stimme bereit", st_laedt: "Stimme lädt",
+    st_aus: "Stimme startet mit dem Vortrag", st_fehler: "Stimme gestört – Ersatzstimme", st_fehlt: "Qwen3-TTS fehlt – Ersatzstimme Piper",
+    d_musik: "{n} Musikstücke im Ordner", d_musik_leer: "Musikordner leer", d_ace: "ACE-Step läuft",
+    d_ace_aus: "ACE-Step aus (nur für „Passend erzeugen“)", d_weg: "Diashow-Server nicht erreichbar",
+    err_thema: "Bitte zuerst ein Thema eingeben.", err_start: "Start fehlgeschlagen",
+    err_neustart: "Der Diashow-Server wurde zwischendurch neu gestartet – der Vortrag ist verloren. Bitte noch einmal starten.",
+    err_verbindung: "Keine Verbindung mehr zum Diashow-Server. Läuft LM Studio? Dann bitte die Seite neu laden und noch einmal starten.",
+    stop: "Vortrag beenden", warm: "Der Projektor wärmt sich auf …", lange: "dauert ungewöhnlich lange – die Grafikkarte ist evtl. belegt",
+    wartet: "Nächstes Dia wird eingelegt …", dia_von: "Dia {k} von {n}", noch: " · noch {z}", regler: "Lautstärke der Hintergrundmusik",
+    ende: "Ende", danke: "Vielen Dank!", zu_ende: "„{t}“ ist zu Ende.", nochmal: "Neuen Vortrag vorbereiten",
+    m_frage: "Sprachmodell wird gefragt …", m_gliederung: "Die Gliederung entsteht …", m_pruefen: "Die Gliederung wird gegengeprüft …",
+    m_titelbild: "Das Titelbild wird gemalt …", m_erste: "Die ersten Dias werden vorbereitet …", m_stimme: "Die Stimme wird geladen …",
+    m_bereit: "Dia {k} von {n} liegt bereit …",
+  },
+  en: {
+    seitentitel: "Slide Show", titel: "Slide Show", unterzeile: "Enter a topic, choose the length, switch on the projector.", sprache: "Language",
+    frage: "What should it be about?", platzhalter: "e.g. The history of coffee – from Ethiopia to the Viennese coffee house",
+    laenge: "Length of the talk", minuten: "{n} minutes", musik: "Background music", m_ordner: "From the music folder",
+    m_erzeugen: "Generate to match", m_aus: "No music", extras: "Extras", x_figuren: "Wandering figures",
+    x_saal: "Audience sounds", los: "Switch on the projector", pruefe: "Checking services …", prog_ende: "Quit program",
+    prog_frage: "Really quit the program?",
+    prog_weg: "The program has been closed. You can close this window – it starts again with your next chat in LM Studio.",
+    d_llm: "Language model: {x}", d_llm_fehlt: "No language model loaded – will be loaded at start", d_comfy: "Images: ComfyUI ready",
+    d_comfy_aus: "ComfyUI starts with the talk", st_bereit: "Voice ready", st_laedt: "Voice loading",
+    st_aus: "Voice starts with the talk", st_fehler: "Voice error – fallback voice", st_fehlt: "Qwen3-TTS missing – fallback voice Piper",
+    d_musik: "{n} music tracks in the folder", d_musik_leer: "Music folder empty", d_ace: "ACE-Step running",
+    d_ace_aus: "ACE-Step off (only for “Generate to match”)", d_weg: "Slide show server not reachable",
+    err_thema: "Please enter a topic first.", err_start: "Start failed",
+    err_neustart: "The slide show server was restarted in the meantime – the talk is lost. Please start again.",
+    err_verbindung: "Lost connection to the slide show server. Is LM Studio running? Then reload the page and start again.",
+    stop: "End talk", warm: "The projector is warming up …", lange: "taking unusually long – the graphics card may be busy",
+    wartet: "Loading the next slide …", dia_von: "Slide {k} of {n}", noch: " · {z} left", regler: "Background music volume",
+    ende: "The End", danke: "Thank you!", zu_ende: "“{t}” has ended.", nochmal: "Prepare a new talk",
+    m_frage: "Asking the language model …", m_gliederung: "Creating the outline …", m_pruefen: "Checking the outline …",
+    m_titelbild: "Painting the title picture …", m_erste: "Preparing the first slides …", m_stimme: "Loading the voice …",
+    m_bereit: "Slide {k} of {n} is ready …",
+  },
+  fr: {
+    seitentitel: "Diaporama", titel: "Diaporama", unterzeile: "Saisissez un sujet, choisissez la durée, allumez le projecteur.", sprache: "Langue",
+    frage: "De quoi doit-il parler ?", platzhalter: "p. ex. L'histoire du café – de l'Éthiopie aux cafés viennois",
+    laenge: "Durée de la présentation", minuten: "{n} minutes", musik: "Musique de fond", m_ordner: "Depuis le dossier musique",
+    m_erzeugen: "Générer sur mesure", m_aus: "Pas de musique", extras: "Extras", x_figuren: "Figures animées",
+    x_saal: "Bruits de salle", los: "Allumer le projecteur", pruefe: "Vérification des services …", prog_ende: "Quitter le programme",
+    prog_frage: "Vraiment quitter le programme ?",
+    prog_weg: "Le programme est fermé. Vous pouvez fermer cette fenêtre – il redémarre lors de votre prochain chat dans LM Studio.",
+    d_llm: "Modèle de langue : {x}", d_llm_fehlt: "Aucun modèle de langue chargé – il sera chargé au démarrage", d_comfy: "Images : ComfyUI prêt",
+    d_comfy_aus: "ComfyUI démarre avec la présentation", st_bereit: "Voix prête", st_laedt: "La voix se charge",
+    st_aus: "La voix démarre avec la présentation", st_fehler: "Voix en panne – voix de secours", st_fehlt: "Qwen3-TTS absent – voix de secours Piper",
+    d_musik: "{n} morceaux dans le dossier", d_musik_leer: "Dossier musique vide", d_ace: "ACE-Step actif",
+    d_ace_aus: "ACE-Step arrêté (uniquement pour « Générer sur mesure »)", d_weg: "Serveur du diaporama injoignable",
+    err_thema: "Veuillez d'abord saisir un sujet.", err_start: "Échec du démarrage",
+    err_neustart: "Le serveur a redémarré entre-temps – la présentation est perdue. Veuillez relancer.",
+    err_verbindung: "Connexion au serveur perdue. LM Studio est-il lancé ? Rechargez la page et relancez.",
+    stop: "Arrêter la présentation", warm: "Le projecteur chauffe …", lange: "anormalement long – la carte graphique est peut-être occupée",
+    wartet: "Chargement de la diapositive suivante …", dia_von: "Diapositive {k} sur {n}", noch: " · encore {z}", regler: "Volume de la musique de fond",
+    ende: "Fin", danke: "Merci !", zu_ende: "« {t} » est terminé.", nochmal: "Préparer une nouvelle présentation",
+    m_frage: "Interrogation du modèle de langue …", m_gliederung: "Le plan se construit …", m_pruefen: "Vérification du plan …",
+    m_titelbild: "Peinture de l'image de titre …", m_erste: "Préparation des premières diapositives …", m_stimme: "Chargement de la voix …",
+    m_bereit: "Diapositive {k} sur {n} prête …",
+  },
+  es: {
+    seitentitel: "Diaporama", titel: "Diaporama", unterzeile: "Escribe un tema, elige la duración y enciende el proyector.", sprache: "Idioma",
+    frage: "¿De qué debe tratar?", platzhalter: "p. ej. La historia del café: de Etiopía a los cafés de Viena",
+    laenge: "Duración de la presentación", minuten: "{n} minutos", musik: "Música de fondo", m_ordner: "De la carpeta de música",
+    m_erzeugen: "Generar a medida", m_aus: "Sin música", extras: "Extras", x_figuren: "Figuras en movimiento",
+    x_saal: "Sonidos del público", los: "Encender el proyector", pruefe: "Comprobando servicios …", prog_ende: "Cerrar el programa",
+    prog_frage: "¿Seguro que quieres cerrar el programa?",
+    prog_weg: "El programa se ha cerrado. Puedes cerrar esta ventana; se volverá a iniciar con tu próximo chat en LM Studio.",
+    d_llm: "Modelo de lenguaje: {x}", d_llm_fehlt: "No hay modelo de lenguaje cargado: se cargará al iniciar", d_comfy: "Imágenes: ComfyUI listo",
+    d_comfy_aus: "ComfyUI se inicia con la presentación", st_bereit: "Voz lista", st_laedt: "Cargando voz",
+    st_aus: "La voz se inicia con la presentación", st_fehler: "Error de voz: voz de reserva", st_fehlt: "Falta Qwen3-TTS: voz de reserva Piper",
+    d_musik: "{n} pistas en la carpeta", d_musik_leer: "Carpeta de música vacía", d_ace: "ACE-Step activo",
+    d_ace_aus: "ACE-Step apagado (solo para «Generar a medida»)", d_weg: "Servidor no disponible",
+    err_thema: "Escribe primero un tema.", err_start: "Error al iniciar",
+    err_neustart: "El servidor se reinició entretanto y la presentación se ha perdido. Vuelve a empezar.",
+    err_verbindung: "Se perdió la conexión con el servidor. ¿Está abierto LM Studio? Recarga la página y vuelve a empezar.",
+    stop: "Terminar la presentación", warm: "El proyector se está calentando …", lange: "tarda más de lo normal: puede que la tarjeta gráfica esté ocupada",
+    wartet: "Cargando la siguiente diapositiva …", dia_von: "Diapositiva {k} de {n}", noch: " · quedan {z}", regler: "Volumen de la música de fondo",
+    ende: "Fin", danke: "¡Muchas gracias!", zu_ende: "«{t}» ha terminado.", nochmal: "Preparar una nueva presentación",
+    m_frage: "Consultando el modelo de lenguaje …", m_gliederung: "Creando el esquema …", m_pruefen: "Revisando el esquema …",
+    m_titelbild: "Pintando la imagen del título …", m_erste: "Preparando las primeras diapositivas …", m_stimme: "Cargando la voz …",
+    m_bereit: "Diapositiva {k} de {n} lista …",
+  },
+  it: {
+    seitentitel: "Diaporama", titel: "Diaporama", unterzeile: "Inserisci un tema, scegli la durata, accendi il proiettore.", sprache: "Lingua",
+    frage: "Di cosa deve parlare?", platzhalter: "ad es. La storia del caffè – dall'Etiopia ai caffè di Vienna",
+    laenge: "Durata della presentazione", minuten: "{n} minuti", musik: "Musica di sottofondo", m_ordner: "Dalla cartella musica",
+    m_erzeugen: "Generare su misura", m_aus: "Nessuna musica", extras: "Extra", x_figuren: "Figure in movimento",
+    x_saal: "Rumori di sala", los: "Accendi il proiettore", pruefe: "Controllo dei servizi …", prog_ende: "Chiudi il programma",
+    prog_frage: "Chiudere davvero il programma?",
+    prog_weg: "Il programma è stato chiuso. Puoi chiudere questa finestra – ripartirà con la prossima chat in LM Studio.",
+    d_llm: "Modello linguistico: {x}", d_llm_fehlt: "Nessun modello linguistico caricato – verrà caricato all'avvio", d_comfy: "Immagini: ComfyUI pronto",
+    d_comfy_aus: "ComfyUI si avvia con la presentazione", st_bereit: "Voce pronta", st_laedt: "Caricamento voce",
+    st_aus: "La voce parte con la presentazione", st_fehler: "Voce in errore – voce di riserva", st_fehlt: "Qwen3-TTS assente – voce di riserva Piper",
+    d_musik: "{n} brani nella cartella", d_musik_leer: "Cartella musica vuota", d_ace: "ACE-Step attivo",
+    d_ace_aus: "ACE-Step spento (solo per «Generare su misura»)", d_weg: "Server non raggiungibile",
+    err_thema: "Inserisci prima un tema.", err_start: "Avvio non riuscito",
+    err_neustart: "Il server è stato riavviato nel frattempo – la presentazione è persa. Riavviala.",
+    err_verbindung: "Connessione al server persa. LM Studio è aperto? Ricarica la pagina e riavvia.",
+    stop: "Termina la presentazione", warm: "Il proiettore si sta scaldando …", lange: "ci vuole più del solito – la scheda grafica potrebbe essere occupata",
+    wartet: "Caricamento della prossima diapositiva …", dia_von: "Diapositiva {k} di {n}", noch: " · ancora {z}", regler: "Volume della musica di sottofondo",
+    ende: "Fine", danke: "Grazie!", zu_ende: "«{t}» è terminato.", nochmal: "Prepara una nuova presentazione",
+    m_frage: "Interrogazione del modello linguistico …", m_gliederung: "Creazione della scaletta …", m_pruefen: "Verifica della scaletta …",
+    m_titelbild: "Dipingendo l'immagine del titolo …", m_erste: "Preparazione delle prime diapositive …", m_stimme: "Caricamento della voce …",
+    m_bereit: "Diapositiva {k} di {n} pronta …",
+  },
+  pt: {
+    seitentitel: "Diaporama", titel: "Diaporama", unterzeile: "Escreva um tema, escolha a duração e ligue o projetor.", sprache: "Idioma",
+    frage: "Sobre o que deve ser?", platzhalter: "p. ex. A história do café – da Etiópia aos cafés de Viena",
+    laenge: "Duração da apresentação", minuten: "{n} minutos", musik: "Música de fundo", m_ordner: "Da pasta de música",
+    m_erzeugen: "Gerar à medida", m_aus: "Sem música", extras: "Extras", x_figuren: "Figuras em movimento",
+    x_saal: "Sons da plateia", los: "Ligar o projetor", pruefe: "A verificar serviços …", prog_ende: "Sair do programa",
+    prog_frage: "Sair mesmo do programa?",
+    prog_weg: "O programa foi encerrado. Pode fechar esta janela – volta a iniciar na próxima conversa no LM Studio.",
+    d_llm: "Modelo de linguagem: {x}", d_llm_fehlt: "Nenhum modelo de linguagem carregado – será carregado ao iniciar", d_comfy: "Imagens: ComfyUI pronto",
+    d_comfy_aus: "ComfyUI inicia com a apresentação", st_bereit: "Voz pronta", st_laedt: "A carregar a voz",
+    st_aus: "A voz inicia com a apresentação", st_fehler: "Erro na voz – voz de recurso", st_fehlt: "Falta Qwen3-TTS – voz de recurso Piper",
+    d_musik: "{n} faixas na pasta", d_musik_leer: "Pasta de música vazia", d_ace: "ACE-Step ativo",
+    d_ace_aus: "ACE-Step desligado (só para «Gerar à medida»)", d_weg: "Servidor indisponível",
+    err_thema: "Escreva primeiro um tema.", err_start: "Falha ao iniciar",
+    err_neustart: "O servidor foi reiniciado entretanto – a apresentação perdeu-se. Inicie de novo.",
+    err_verbindung: "Ligação ao servidor perdida. O LM Studio está aberto? Recarregue a página e inicie de novo.",
+    stop: "Terminar a apresentação", warm: "O projetor está a aquecer …", lange: "está a demorar mais do que o normal – a placa gráfica pode estar ocupada",
+    wartet: "A carregar o próximo diapositivo …", dia_von: "Diapositivo {k} de {n}", noch: " · faltam {z}", regler: "Volume da música de fundo",
+    ende: "Fim", danke: "Obrigado!", zu_ende: "«{t}» terminou.", nochmal: "Preparar nova apresentação",
+    m_frage: "A consultar o modelo de linguagem …", m_gliederung: "A criar o esquema …", m_pruefen: "A verificar o esquema …",
+    m_titelbild: "A pintar a imagem do título …", m_erste: "A preparar os primeiros diapositivos …", m_stimme: "A carregar a voz …",
+    m_bereit: "Diapositivo {k} de {n} pronto …",
+  },
+  ru: {
+    seitentitel: "Слайд-шоу", titel: "Слайд-шоу", unterzeile: "Введите тему, выберите длительность и включите проектор.", sprache: "Язык",
+    frage: "О чём будет показ?", platzhalter: "например: История кофе – от Эфиопии до венских кофеен",
+    laenge: "Длительность показа", minuten: "{n} мин.", musik: "Фоновая музыка", m_ordner: "Из папки с музыкой",
+    m_erzeugen: "Сгенерировать под тему", m_aus: "Без музыки", extras: "Дополнительно", x_figuren: "Движущиеся фигурки",
+    x_saal: "Звуки зала", los: "Включить проектор", pruefe: "Проверка сервисов …", prog_ende: "Завершить программу",
+    prog_frage: "Действительно завершить программу?",
+    prog_weg: "Программа завершена. Можно закрыть это окно – она снова запустится при следующем чате в LM Studio.",
+    d_llm: "Языковая модель: {x}", d_llm_fehlt: "Языковая модель не загружена – загрузится при запуске", d_comfy: "Изображения: ComfyUI готов",
+    d_comfy_aus: "ComfyUI запустится вместе с показом", st_bereit: "Голос готов", st_laedt: "Голос загружается",
+    st_aus: "Голос запустится вместе с показом", st_fehler: "Сбой голоса – запасной голос", st_fehlt: "Нет Qwen3-TTS – запасной голос Piper",
+    d_musik: "Треков в папке: {n}", d_musik_leer: "Папка с музыкой пуста", d_ace: "ACE-Step работает",
+    d_ace_aus: "ACE-Step выключен (только для «Сгенерировать под тему»)", d_weg: "Сервер недоступен",
+    err_thema: "Сначала введите тему.", err_start: "Не удалось запустить",
+    err_neustart: "Сервер был перезапущен – показ потерян. Запустите ещё раз.",
+    err_verbindung: "Связь с сервером потеряна. LM Studio запущен? Перезагрузите страницу и запустите снова.",
+    stop: "Завершить показ", warm: "Проектор прогревается …", lange: "дольше обычного – видеокарта, возможно, занята",
+    wartet: "Загружается следующий слайд …", dia_von: "Слайд {k} из {n}", noch: " · осталось {z}", regler: "Громкость фоновой музыки",
+    ende: "Конец", danke: "Спасибо!", zu_ende: "«{t}» завершён.", nochmal: "Подготовить новый показ",
+    m_frage: "Запрос к языковой модели …", m_gliederung: "Составляется план …", m_pruefen: "План проверяется …",
+    m_titelbild: "Рисуется титульная картинка …", m_erste: "Готовятся первые слайды …", m_stimme: "Загружается голос …",
+    m_bereit: "Слайд {k} из {n} готов …",
+  },
+};
+let sprache = "de";
+try {
+  const gemerkt = localStorage.getItem("diashow-sprache");
+  const browser = (navigator.language || "de").slice(0, 2).toLowerCase();
+  sprache = TEXTE[gemerkt] ? gemerkt : (TEXTE[browser] ? browser : "de");
+} catch (e) {}
+
+function t(schluessel, werte = {}) {
+  const roh = (TEXTE[sprache] && TEXTE[sprache][schluessel]) ?? TEXTE.de[schluessel] ?? schluessel;
+  return roh.replace(/\{(\w+)\}/g, (_, n) => (werte[n] ?? ""));
+}
+
+// Meldungen des Servers beim Aufwärmen kommen auf Deutsch – hier in die gewählte Sprache
+const SERVER_MELDUNGEN = {
+  "Der Projektor wärmt sich auf …": "warm", "Sprachmodell wird gefragt …": "m_frage", "Die Gliederung entsteht …": "m_gliederung",
+  "Die Gliederung wird gegengeprüft …": "m_pruefen", "Das Titelbild wird gemalt …": "m_titelbild",
+  "Die ersten Dias werden vorbereitet …": "m_erste", "Die Stimme wird geladen …": "m_stimme",
+};
+function meldungUebersetzen(text) {
+  if (!text) return "";
+  if (SERVER_MELDUNGEN[text]) return t(SERVER_MELDUNGEN[text]);
+  const m = /^Dia (\d+) von (\d+) liegt bereit/.exec(text);
+  return m ? t("m_bereit", { k: m[1], n: m[2] }) : text;
+}
+
+function spracheAnwenden() {
+  document.documentElement.lang = sprache;
+  document.title = t("seitentitel");
+  document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
+  document.querySelectorAll("[data-t-ph]").forEach((el) => { el.placeholder = t(el.dataset.tPh); });
+  document.querySelectorAll("[data-t-titel]").forEach((el) => { el.title = t(el.dataset.tTitel); el.setAttribute("aria-label", t(el.dataset.tTitel)); });
+  $("sprache").value = sprache;
+  zeigeMinuten();
+  diensteMalen();
+}
+
+// ---------------- Startseite ----------------
+const minuten = $("minuten");
+const zeigeMinuten = () => { $("minutenWert").textContent = t("minuten", { n: minuten.value }); };
+minuten.addEventListener("input", zeigeMinuten);
+zeigeMinuten();
+try { const t = localStorage.getItem("diashow-thema"); if (t) $("thema").value = t; } catch (e) {}
+// Extras an/aus (Wunsch des Nutzers 2026-10-20): ohne Figuren und ohne Saal-Geräusche – gemerkt für das nächste Mal
+for (const id of ["x-figuren", "x-saal"]) {
+  try { const v = localStorage.getItem("diashow-" + id); if (v !== null) $(id).checked = v === "1"; } catch (e) {}
+  $(id).addEventListener("change", () => { try { localStorage.setItem("diashow-" + id, $(id).checked ? "1" : "0"); } catch (e) {} });
+}
+
+let dienstStand;   // undefined = noch nicht gefragt, null = Server nicht erreichbar
+function diensteMalen() {
+  const s = dienstStand;
+  if (s === undefined) { $("dienste").innerHTML = `<span>${t("pruefe")}</span>`; return; }
+  if (s === null) { $("dienste").innerHTML = `<span class="aus">${t("d_weg")}</span>`; return; }
+  const stimme = { bereit: ["ok", t("st_bereit")], "lädt": ["warn", t("st_laedt")], aus: ["ok", t("st_aus")],
+                   fehler: ["aus", t("st_fehler")], fehlt: ["warn", t("st_fehlt")] }[s.stimme] || ["warn", s.stimme];
+  const teile = [
+    s.sprachmodell ? ["ok", t("d_llm", { x: s.sprachmodell })] : ["warn", t("d_llm_fehlt")],
+    s.comfyui ? ["ok", t("d_comfy")] : ["warn", t("d_comfy_aus")],
+    stimme,
+    s.musik ? ["ok", t("d_musik", { n: s.musik })] : ["warn", t("d_musik_leer")],
+    s.acestep ? ["ok", t("d_ace")] : ["", t("d_ace_aus")],
+  ];
+  const sicher = (x) => String(x).replace(/[&<>"]/g, (z) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[z]));
+  $("dienste").innerHTML = teile.map(([k, x]) => `<span class="${k}">${sicher(x)}</span>`).join("");
+}
+async function diensteZeigen() {
+  try { dienstStand = await (await fetch("/api/status")).json(); } catch (e) { dienstStand = null; }
+  diensteMalen();
+}
+fetch("/api/vorwaermen", { method: "POST", body: "{}" }).catch(() => {});
+spracheAnwenden();
+diensteZeigen();
+
+$("sprache").addEventListener("change", () => {
+  sprache = $("sprache").value;
+  try { localStorage.setItem("diashow-sprache", sprache); } catch (e) {}
+  spracheAnwenden();
+});
+
+// Knopf „Programm beenden“ (Wunsch des Nutzers 2026-10-20): Server und Stimmdienst beenden, Grafikspeicher frei
+$("programmEnde").addEventListener("click", async () => {
+  if (!confirm(t("prog_frage"))) return;
+  try { await fetch("/api/beenden", { method: "POST", body: "{}" }); } catch (e) {}
+  $("abschiedText").textContent = t("prog_weg");
+  $("abschied").classList.remove("versteckt");
+  $("start").classList.add("versteckt");
+  setTimeout(() => { try { window.close(); } catch (e) {} }, 400);   // klappt nur bei Fenstern, die ein Skript geöffnet hat
+});
+setInterval(() => { if (!$("start").classList.contains("versteckt")) diensteZeigen(); }, 8000);
+
+$("los").addEventListener("click", starten);
+$("thema").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) starten(); });
+$("nochmal").addEventListener("click", () => zurStartseite());
+$("beenden").addEventListener("click", () => beenden(true));
+
+// ---------------- Ton: Klacken, Lüfter, Musik ----------------
+let ac = null, luefter = null;
+function audioStart() {
+  if (ac) { ac.resume(); return; }
+  try {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    // leises Lüfterrauschen des Projektors
+    const n = ac.sampleRate * 2, puffer = ac.createBuffer(1, n, ac.sampleRate), d = puffer.getChannelData(0);
+    let letzter = 0;
+    for (let i = 0; i < n; i++) { letzter = (letzter + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = letzter * 3.2; }
+    const quelle = ac.createBufferSource(); quelle.buffer = puffer; quelle.loop = true;
+    const filter = ac.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 420;
+    luefter = ac.createGain(); luefter.gain.value = 0;
+    quelle.connect(filter).connect(luefter).connect(ac.destination); quelle.start();
+  } catch (e) { ac = null; }
+}
+function luefterAn(an) {
+  if (!ac || !luefter) return;
+  luefter.gain.setTargetAtTime(an ? 0.05 : 0, ac.currentTime, 0.6);
+}
+function klack(staerke = 1) {
+  if (!ac) return;
+  const t = ac.currentTime;
+  const lang = Math.floor(ac.sampleRate * 0.05), puffer = ac.createBuffer(1, lang, ac.sampleRate), d = puffer.getChannelData(0);
+  for (let i = 0; i < lang; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / lang, 4);
+  const rauschen = ac.createBufferSource(); rauschen.buffer = puffer;
+  const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2300; bp.Q.value = 1.2;
+  const g1 = ac.createGain(); g1.gain.value = 0.55 * staerke;
+  rauschen.connect(bp).connect(g1).connect(ac.destination); rauschen.start(t);
+  const osz = ac.createOscillator(); osz.type = "sine";
+  osz.frequency.setValueAtTime(140, t); osz.frequency.exponentialRampToValueAtTime(55, t + 0.09);
+  const g2 = ac.createGain(); g2.gain.setValueAtTime(0.45 * staerke, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osz.connect(g2).connect(ac.destination); osz.start(t); osz.stop(t + 0.13);
+}
+
+// ---------------- Saal-Geräusche (Wunsch des Nutzers 2026-10-20) ----------------
+// Einmalig mit Woosh erzeugt (vortrag/ton/<art>_<nr>.flac), je Art mehrere Varianten, damit nichts hörbar wiederholt:
+// Gemurmel beim Aufwärmen (wird leiser, wenn der Vortrag losgeht), Diawechsel, ab und zu ein Husten, Stühlerücken …,
+// am Ende Applaus. Fehlt eine Datei, bleibt es einfach still (bzw. das synthetische Klacken beim Diawechsel).
+const saal = { an: true, puffer: {}, geladen: false, quellen: new Set(), gemurmel: null, uhr: null, letztes: "", zuletzt: {} };
+const ZWISCHEN = [["husten", 5], ["raeuspern", 4], ["stuhl", 4], ["kleidung", 4], ["papier", 3], ["tuscheln", 3],
+                  ["niesen", 2], ["tuete", 2], ["glaeser", 2], ["schritte", 1], ["tuer", 1], ["plopp", 1], ["flasche", 1]];
+
+async function saalLaden() {
+  if (!ac || saal.geladen) return;
+  saal.geladen = true;
+  try {
+    const arten = await (await fetch("/api/geraeusche")).json();
+    await Promise.all(Object.entries(arten).map(async ([art, urls]) => {
+      const puffer = await Promise.all(urls.map(async (u) => {
+        try { return await ac.decodeAudioData(await (await fetch(u)).arrayBuffer()); } catch (e) { return null; }
+      }));
+      saal.puffer[art] = puffer.filter(Boolean);
+    }));
+  } catch (e) { saal.geladen = false; }
+}
+
+function saalSpielen(art, lautstaerke = 0.3, pan = 0, ziel = null) {
+  const liste = saal.puffer[art];
+  if (!saal.an || !ac || !liste || !liste.length) return null;
+  let i = Math.floor(Math.random() * liste.length);
+  if (liste.length > 1 && i === saal.zuletzt[art]) i = (i + 1) % liste.length;   // nie dieselbe Variante zweimal
+  saal.zuletzt[art] = i;
+  const q = ac.createBufferSource(); q.buffer = liste[i];
+  const g = ac.createGain(); g.gain.value = lautstaerke;
+  let kette = q.connect(g);
+  if (ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = pan; kette = kette.connect(p); }
+  kette.connect(ziel || ac.destination);
+  q.start();
+  saal.quellen.add(q); q.onended = () => saal.quellen.delete(q);
+  return { quelle: q, gain: g };
+}
+
+function gemurmelStarten() {
+  if (!ac || saal.gemurmel) return;
+  const bus = ac.createGain(); bus.gain.value = 0; bus.connect(ac.destination);
+  bus.gain.setTargetAtTime(0.55, ac.currentTime, 1.2);
+  const m = { bus, aus: false, t: null };
+  saal.gemurmel = m;
+  const naechstes = () => {   // Varianten in zufälliger Folge, mit Überblendung
+    if (m.aus) return;
+    const s = saalSpielen("publikum", 0, zufall(-.3, .3), bus);
+    if (!s) { m.t = setTimeout(naechstes, 400); return; }   // noch nicht geladen
+    const dauer = s.quelle.buffer.duration, t = ac.currentTime, ueber = Math.min(1.8, dauer / 4);
+    s.gain.gain.setValueAtTime(0, t); s.gain.gain.linearRampToValueAtTime(1, t + ueber);
+    s.gain.gain.setValueAtTime(1, t + dauer - ueber); s.gain.gain.linearRampToValueAtTime(0, t + dauer);
+    m.t = setTimeout(naechstes, (dauer - ueber) * 1000);
+  };
+  naechstes();
+}
+
+function gemurmelLeiser(sekunden = 10) {   // der Vortrag geht los: das Publikum wird zunehmend leiser
+  const m = saal.gemurmel;
+  if (!m || !ac) return;
+  saal.gemurmel = null; m.aus = true; clearTimeout(m.t);
+  const t = ac.currentTime;
+  m.bus.gain.cancelScheduledValues(t); m.bus.gain.setValueAtTime(m.bus.gain.value, t);
+  m.bus.gain.linearRampToValueAtTime(0.0001, t + sekunden);
+  setTimeout(() => m.bus.disconnect(), sekunden * 1000 + 300);
+}
+
+function zwischenPlanen(l) {   // hier und da ein Geräusch aus dem Saal – leise, irgendwo im Raum
+  clearTimeout(saal.uhr);
+  saal.uhr = setTimeout(() => {
+    if (l.aus) return;
+    if (l.pos >= 1 && l.rolle !== "hoehepunkt") {
+      const moeglich = ZWISCHEN.filter(([a]) => saal.puffer[a] && saal.puffer[a].length && a !== saal.letztes);
+      let r = Math.random() * moeglich.reduce((s, [, g]) => s + g, 0);
+      const wahl = moeglich.find(([, g]) => (r -= g) < 0);
+      if (wahl) { saalSpielen(wahl[0], zufall(.12, .28), zufall(-.85, .85)); saal.letztes = wahl[0]; }
+    }
+    zwischenPlanen(l);
+  }, zufall(25000, 60000));
+}
+
+function saalStill() {
+  clearTimeout(saal.uhr);
+  if (saal.gemurmel) { const m = saal.gemurmel; saal.gemurmel = null; m.aus = true; clearTimeout(m.t); try { m.bus.disconnect(); } catch (e) {} }
+  saal.quellen.forEach((q) => { try { q.stop(); } catch (e) {} });
+  saal.quellen.clear();
+}
+
+const musik = { an: false, liste: [], i: 0, aktiv: $("musikA"), ruhend: $("musikB"), ziel: musikPegel.laut(), stufe: "laut", erzeugt: null, erzeugtGespielt: false };
+function musikStufe(stufe, ms = 700) { musik.stufe = stufe; musikLautstaerke(musikPegel[stufe](), ms); }
+
+const reglerEl = $("musikRegler");
+reglerEl.value = Math.round(musikRegler * 100);
+reglerEl.addEventListener("input", () => {
+  musikRegler = reglerEl.value / 100;
+  try { localStorage.setItem("diashow-musik", String(musikRegler)); } catch (e) {}
+  musikStufe(musik.stufe, 120);   // sofort hörbar, in der gerade gültigen Stufe
+});
+function blende(el, nach, ms) {
+  // Zeitgeber statt requestAnimationFrame: der läuft in einem Hintergrund-Tab gar nicht, die Blende hinge dann ewig.
+  clearInterval(el._blende);
+  return new Promise((fertig) => {
+    const von = el.volume, t0 = performance.now();
+    el._blende = setInterval(() => {
+      const p = Math.min(1, (performance.now() - t0) / ms);
+      el.volume = Math.max(0, Math.min(1, von + (nach - von) * p));
+      if (p >= 1) { clearInterval(el._blende); fertig(); }
+    }, 40);
+  });
+}
+async function musikStarten(modus) {
+  musik.an = modus !== "aus"; musik.erzeugt = null; musik.erzeugtGespielt = false;
+  if (!musik.an) return;
+  try {
+    musik.liste = (await (await fetch("/api/musik")).json()).lieder;
+    for (let i = musik.liste.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [musik.liste[i], musik.liste[j]] = [musik.liste[j], musik.liste[i]]; }
+  } catch (e) { musik.liste = []; }
+  musik.i = 0;
+  naechstesLied();
+}
+async function naechstesLied(url) {
+  if (!musik.an) return;
+  const quelle = url || musik.liste[musik.i++ % Math.max(1, musik.liste.length)];
+  if (!quelle) return;
+  const alt = musik.aktiv, neu = musik.ruhend;
+  musik.aktiv = neu; musik.ruhend = alt;
+  neu.src = quelle; neu.volume = 0;
+  neu.onended = () => naechstesLied();
+  neu.ontimeupdate = () => {   // vor dem Ende überblenden
+    if (neu === musik.aktiv && neu.duration && neu.duration - neu.currentTime < 4 && !neu._blendet) { neu._blendet = true; naechstesLied(); }
+  };
+  neu._blendet = false;
+  try { await neu.play(); } catch (e) { return; }
+  if (!musik.an) { neu.pause(); return; }   // inzwischen beendet
+  blende(neu, musik.ziel, 3500);
+  if (!alt.paused) { await blende(alt, 0, 3500); alt.pause(); }
+}
+function musikLautstaerke(ziel, ms = 700) { musik.ziel = ziel; if (musik.an && !musik.aktiv.paused) blende(musik.aktiv, ziel, ms); }
+async function musikAus(ms = 1500) {
+  musik.an = false;
+  await Promise.race([
+    Promise.all([musikA, musikB].map((el) => (el.paused ? null : blende(el, 0, ms)))),
+    schlafen(ms + 200),
+  ]);
+  // auf jeden Fall anhalten – auch wenn eine Blende hängt oder gerade ein neues Lied anläuft
+  [musikA, musikB].forEach((el) => { clearInterval(el._blende); el.pause(); el.removeAttribute("src"); el.load(); });
+}
+const musikA = $("musikA"), musikB = $("musikB");
+
+// ---------------- Atmosphäre: vom Browser gezeichnete Effekte ----------------
+// Die KI entscheidet je Dia, ob ein Effekt passt (Wunsch des Nutzers 2026-10-20: Schnee, Regen, im All Sterne …).
+const effekt = { name: "keiner", staerke: 0, ziel: 0, teile: [], naechster: null, zuletzt: 0, schnuppe: null, uhr: 0 };
+const leinwandFx = $("effekte"), fx = leinwandFx.getContext("2d");
+const zufall = (a, b) => a + Math.random() * (b - a);
+
+function fxGroesse() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  leinwandFx.width = innerWidth * dpr; leinwandFx.height = innerHeight * dpr;
+  fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener("resize", fxGroesse);
+fxGroesse();
+
+function fxTeile(name) {
+  const W = innerWidth, H = innerHeight, n = (k) => Math.round(k * Math.min(1.6, (W * H) / (1600 * 900)));
+  const neu = (f, anzahl) => Array.from({ length: n(anzahl) }, f);
+  switch (name) {
+    case "schnee": return neu(() => ({ x: zufall(0, W), y: zufall(-H, H), r: zufall(1.2, 3.8), v: zufall(25, 70), p: zufall(0, 6) }), 150);
+    case "regen": return neu(() => ({ x: zufall(0, W * 1.2), y: zufall(-H, H), l: zufall(12, 26), v: zufall(650, 950) }), 230);
+    case "sterne": return neu(() => ({ x: zufall(0, W), y: zufall(0, H), r: zufall(.5, 1.8), f: zufall(.6, 2.2), p: zufall(0, 6) }), 200);
+    case "funken": return neu(() => ({ x: zufall(0, W), y: zufall(H * .4, H * 1.1), vx: zufall(-25, 25), v: zufall(40, 120), r: zufall(1.3, 3.2), a: zufall(.3, 1) }), 130);
+    case "nebel": return neu(() => ({ x: zufall(-W * .3, W), y: zufall(H * .3, H), r: zufall(H * .25, H * .5), v: zufall(6, 18) }), 9);
+    case "blasen": return neu(() => ({ x: zufall(0, W), y: zufall(0, H * 1.2), r: zufall(2, 9), v: zufall(25, 70), p: zufall(0, 6) }), 70);
+    case "gluehwuermchen": return neu(() => ({ x: zufall(0, W), y: zufall(H * .2, H), vx: zufall(-15, 15), vy: zufall(-10, 10), p: zufall(0, 6) }), 45);
+    case "konfetti": return neu(() => ({ x: zufall(0, W), y: zufall(-H, 0), v: zufall(60, 140), w: zufall(5, 10), d: zufall(0, 6), s: zufall(-4, 4),
+                                         c: ["#e3a54a", "#e07a5f", "#8fbf7a", "#6fa8dc", "#f2d16b", "#c79ad6"][Math.floor(zufall(0, 6))] }), 170);
+    default: return [];
+  }
+}
+
+function effektSetzen(name) {
+  name = name || "keiner";
+  if (name === effekt.name && effekt.ziel === 1) return;
+  if (name === "keiner") { effekt.ziel = 0; effekt.naechster = null; return; }
+  if (effekt.name === "keiner" || effekt.staerke < 0.02) { effekt.name = name; effekt.teile = fxTeile(name); effekt.ziel = 1; }
+  else { effekt.ziel = 0; effekt.naechster = name; }   // erst ausblenden, dann wechseln
+}
+
+function effektSofortAus() { effekt.name = "keiner"; effekt.staerke = effekt.ziel = 0; effekt.teile = []; effekt.naechster = null; fx.clearRect(0, 0, innerWidth, innerHeight); }
+
+function fxSchritt(t) {
+  requestAnimationFrame(fxSchritt);
+  const dt = Math.min(0.05, (t - (effekt.zuletzt || t)) / 1000); effekt.zuletzt = t; effekt.uhr += dt;
+  effekt.staerke += (effekt.ziel - effekt.staerke) * Math.min(1, dt * 1.2);
+  if (effekt.ziel === 0 && effekt.staerke < 0.02) {
+    if (effekt.naechster) { effekt.name = effekt.naechster; effekt.naechster = null; effekt.teile = fxTeile(effekt.name); effekt.ziel = 1; }
+    else if (effekt.name !== "keiner") { effektSofortAus(); return; }
+  }
+  if (effekt.name === "keiner") return;
+  const W = innerWidth, H = innerHeight, u = effekt.uhr;
+  fx.clearRect(0, 0, W, H);
+  fx.globalAlpha = effekt.staerke;
+  for (const q of effekt.teile) {
+    switch (effekt.name) {
+      case "schnee":
+        q.y += q.v * dt; q.x += Math.sin(u * .8 + q.p) * 18 * dt;
+        if (q.y > H + 5) { q.y = -5; q.x = zufall(0, W); }
+        fx.fillStyle = "rgba(255,255,255,.85)"; fx.beginPath(); fx.arc(q.x, q.y, q.r, 0, 7); fx.fill(); break;
+      case "regen":
+        q.y += q.v * dt; q.x -= q.v * .18 * dt;
+        if (q.y > H) { q.y = zufall(-60, -10); q.x = zufall(0, W * 1.2); }
+        fx.strokeStyle = "rgba(190,210,240,.45)"; fx.lineWidth = 1.1; fx.beginPath(); fx.moveTo(q.x, q.y); fx.lineTo(q.x + q.l * .18, q.y - q.l); fx.stroke(); break;
+      case "sterne":
+        fx.fillStyle = `rgba(255,250,235,${.35 + .65 * Math.abs(Math.sin(u * q.f + q.p))})`; fx.beginPath(); fx.arc(q.x, q.y, q.r, 0, 7); fx.fill(); break;
+      case "funken":
+        q.y -= q.v * dt; q.x += (q.vx + Math.sin(u * 3 + q.y) * 10) * dt; q.a -= dt * .35;
+        if (q.a <= 0 || q.y < -10) { q.x = zufall(0, W); q.y = zufall(H * .85, H * 1.05); q.a = zufall(.6, 1); }
+        fx.shadowColor = "rgba(255,150,40,.9)"; fx.shadowBlur = 8;   // glühende Funken
+        fx.fillStyle = `rgba(255,${Math.round(150 + 90 * q.a)},70,${Math.min(1, q.a + .2)})`; fx.beginPath(); fx.arc(q.x, q.y, q.r, 0, 7); fx.fill();
+        fx.shadowBlur = 0; break;
+      case "nebel": {
+        q.x += q.v * dt; if (q.x - q.r > W) q.x = -q.r;
+        const g = fx.createRadialGradient(q.x, q.y, 0, q.x, q.y, q.r);
+        g.addColorStop(0, "rgba(220,220,225,.09)"); g.addColorStop(1, "rgba(220,220,225,0)");
+        fx.fillStyle = g; fx.fillRect(q.x - q.r, q.y - q.r, q.r * 2, q.r * 2); break;
+      }
+      case "blasen":
+        q.y -= q.v * dt; q.x += Math.sin(u * 2 + q.p) * 14 * dt;
+        if (q.y < -10) { q.y = H + 10; q.x = zufall(0, W); }
+        fx.strokeStyle = "rgba(220,240,255,.45)"; fx.lineWidth = 1; fx.beginPath(); fx.arc(q.x, q.y, q.r, 0, 7); fx.stroke(); break;
+      case "gluehwuermchen": {
+        q.x += (q.vx + Math.sin(u * .7 + q.p) * 12) * dt; q.y += (q.vy + Math.cos(u * .5 + q.p) * 10) * dt;
+        if (q.x < 0 || q.x > W) q.vx *= -1; if (q.y < H * .15 || q.y > H) q.vy *= -1;
+        const a = .25 + .75 * Math.max(0, Math.sin(u * 1.6 + q.p));
+        const g = fx.createRadialGradient(q.x, q.y, 0, q.x, q.y, 9);
+        g.addColorStop(0, `rgba(230,255,140,${a})`); g.addColorStop(1, "rgba(230,255,140,0)");
+        fx.fillStyle = g; fx.fillRect(q.x - 9, q.y - 9, 18, 18); break;
+      }
+      case "konfetti":
+        q.y += q.v * dt; q.x += Math.sin(u * 2 + q.d) * 30 * dt; q.d += q.s * dt;
+        if (q.y > H + 10) { q.y = -10; q.x = zufall(0, W); }
+        fx.save(); fx.translate(q.x, q.y); fx.rotate(q.d); fx.fillStyle = q.c; fx.fillRect(-q.w / 2, -q.w / 4, q.w, q.w / 2); fx.restore(); break;
+    }
+  }
+  if (effekt.name === "sterne") {   // ab und zu eine Sternschnuppe
+    if (!effekt.schnuppe && Math.random() < dt / 5) effekt.schnuppe = { x: zufall(W * .2, W), y: zufall(0, H * .4), t: 0 };
+    const s = effekt.schnuppe;
+    if (s) {
+      s.t += dt; const x = s.x - s.t * 700, y = s.y + s.t * 300;
+      const g = fx.createLinearGradient(x, y, x + 110, y - 47);
+      g.addColorStop(0, "rgba(255,255,255,.9)"); g.addColorStop(1, "rgba(255,255,255,0)");
+      fx.strokeStyle = g; fx.lineWidth = 1.6; fx.beginPath(); fx.moveTo(x, y); fx.lineTo(x + 110, y - 47); fx.stroke();
+      if (s.t > 1.2) effekt.schnuppe = null;
+    }
+  }
+  fx.globalAlpha = 1;
+}
+requestAnimationFrame(fxSchritt);
+
+// ---------------- Figuren (Sprites, 100x50) ----------------
+// Kontextbasiert: die KI wählt je Dia eine der Figuren des Vortrags – oder keine. Bewegungsart aus der Gliederung.
+const FIGUR_ZOOM = 1.5;   // 100x50 wäre auf großen Bildschirmen winzig
+function figurStarten(sprite) {
+  if (!sprite || !sprite.url) return;
+  const W = innerWidth, H = innerHeight, w = 100 * FIGUR_ZOOM, h = 50 * FIGUR_ZOOM;
+  const rechts = Math.random() < .5;   // die Figuren schauen nach rechts – nach links gespiegelt
+  const kopien = sprite.bewegung === "fallen" ? 5 : sprite.bewegung === "schwimmen" ? 2 : 1;
+  for (let c = 0; c < kopien; c++) {
+    const img = document.createElement("img");
+    img.src = sprite.url; img.alt = ""; img.width = w; img.height = h;
+    $("figuren").appendChild(img);
+    const bilder = [], N = 30, spiegel = rechts ? 1 : -1;
+    const x0 = rechts ? -w : W, x1 = rechts ? W : -w;
+    let dauer = 10000, verz = 0;
+    for (let i = 0; i <= N; i++) {
+      const p = i / N, x = x0 + (x1 - x0) * p;
+      let x2 = x, y = 0, dreh = 0, sx = spiegel;
+      switch (sprite.bewegung) {
+        case "fliegen": y = (bilder.y0 ??= zufall(H * .06, H * .4)) + Math.sin(p * 9) * 18; dreh = Math.cos(p * 9) * 4 * spiegel; dauer = 9000; break;
+        case "schweben": y = (bilder.y0 ??= zufall(H * .1, H * .55)) + Math.sin(p * 5) * 32 - p * 40; dreh = Math.sin(p * 4) * 3; dauer = 16000; break;
+        case "laufen": y = H - h - 4 - Math.abs(Math.sin(p * 40)) * 6; dauer = 12000; break;
+        case "rollen": y = H - h - 4; dreh = ((x - x0) / (Math.PI * h)) * 360; sx = 1; dauer = 10000; break;
+        case "schwimmen": y = (bilder.y0 ??= zufall(H * .35, H * .72)) + c * 46 + Math.sin(p * 7 + c) * 36; dreh = Math.cos(p * 7 + c) * 8 * spiegel; dauer = 14000; verz = c * 900; break;
+        case "fallen": {
+          bilder.xs ??= zufall(W * .05, W * .9);
+          x2 = bilder.xs + Math.sin(p * 6 + c) * 45; y = -h + (H + 2 * h) * p; dreh = Math.sin(p * 5 + c) * 35; sx = 1;
+          dauer = 7000 + c * 400; verz = c * 700; break;
+        }
+      }
+      bilder.push({ transform: `translate(${x2}px, ${y}px) rotate(${dreh}deg) scaleX(${sx})` });
+    }
+    const anim = img.animate(bilder, { duration: dauer, delay: verz, easing: "linear", fill: "both" });
+    anim.onfinish = anim.oncancel = () => img.remove();
+  }
+}
+function figurenWeg() { $("figuren").querySelectorAll("img").forEach((i) => { i.getAnimations().forEach((a) => a.cancel()); i.remove(); }); }
+
+// ---------------- Projektor ----------------
+let lauf = null;   // laufender Vortrag
+
+function zeigerAnzeigen() {
+  $("projektor").classList.add("zeiger");
+  clearTimeout(zeigerAnzeigen.t);
+  zeigerAnzeigen.t = setTimeout(() => $("projektor").classList.remove("zeiger"), 2200);
+}
+$("projektor").addEventListener("mousemove", zeigerAnzeigen);
+
+async function starten() {
+  const thema = $("thema").value.trim();
+  if (!thema) { $("startfehler").textContent = t("err_thema"); $("thema").focus(); return; }
+  try { localStorage.setItem("diashow-thema", thema); } catch (e) {}
+  $("startfehler").textContent = "";
+  $("los").disabled = true;
+  audioStart();
+  saal.an = $("x-saal").checked;
+  if (saal.an) {
+    saalLaden();          // lädt im Hintergrund – das Gemurmel setzt ein, sobald es da ist
+    gemurmelStarten();    // das Publikum wartet aufgeregt, während der Projektor sich aufwärmt
+  }
+  // Vollbild direkt im Klick anfordern (später zählt er nicht mehr als Nutzeraktion) – und nie darauf warten:
+  // manche Fenster beantworten die Anfrage gar nicht.
+  try { const p = document.documentElement.requestFullscreen?.(); if (p) p.catch(() => {}); } catch (e) {}
+  const modus = document.querySelector("input[name=musik]:checked").value;
+  let id;
+  try {
+    const antwort = await fetch("/api/vortrag", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ thema, minuten: Number(minuten.value), musik: modus, figuren: $("x-figuren").checked, sprache }) });
+    const d = await antwort.json();
+    if (!antwort.ok) throw new Error(d.fehler || t("err_start"));
+    id = d.id;
+  } catch (e) {
+    $("startfehler").textContent = e.message;
+    $("los").disabled = false;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    return;
+  }
+  lauf = { id, pos: -1, stand: null, aus: false, modus };
+  $("start").classList.add("versteckt");
+  $("projektor").classList.remove("versteckt");
+  leinwandLeeren();
+  luefterAn(true);
+  abfragen(lauf);
+  aufwaermenAnzeigen(lauf);
+  vortragen(lauf).catch((e) => { console.error(e); fehlerZeigen(e.message); });
+}
+
+async function abfragen(l) {
+  let fehlversuche = 0;
+  while (!l.aus) {
+    try {
+      const antwort = await fetch(`/api/vortrag/${l.id}?pos=${l.pos}`, { signal: AbortSignal.timeout(8000) });
+      if (antwort.status === 404) {
+        fehlerZeigen(t("err_neustart"));
+        return;
+      }
+      const s = await antwort.json();
+      fehlversuche = 0;
+      l.stand = s;
+      if (s.musik_url && musik.an && !musik.erzeugtGespielt && l.pos >= 0) { musik.erzeugtGespielt = true; naechstesLied(s.musik_url); }
+    } catch (e) {
+      // Server kurz weg – weiter versuchen, aber nicht endlos warten
+      if (++fehlversuche >= 10) {
+        fehlerZeigen(t("err_verbindung"));
+        return;
+      }
+    }
+    await schlafen(900);
+  }
+}
+
+// Prozentanzeige beim Aufwärmen: der Server meldet erreichte Etappen; dazwischen läuft die Anzeige langsam auf das
+// nächste Etappenziel zu, damit sie nie stehen bleibt (aber nie darüber hinaus).
+async function aufwaermenAnzeigen(l) {
+  let gezeigt = 0, letzterStand = -1, seit = performance.now();
+  while (!l.aus && l.pos < 0) {
+    const s = l.stand;
+    if (s) {
+      if (s.fortschritt !== letzterStand) { letzterStand = s.fortschritt; seit = performance.now(); }
+      const decke = Math.max(s.fortschritt, (s.fortschritt_ziel || s.fortschritt) - 1);
+      gezeigt = Math.max(gezeigt, s.fortschritt);
+      if (gezeigt < decke) gezeigt += (decke - gezeigt) * 0.02;
+      const p = Math.min(100, Math.floor(gezeigt));
+      $("prozent").textContent = `${p} %`;
+      $("balkenFuellung").style.width = `${p}%`;
+      $("balken").setAttribute("aria-valuenow", p);
+      $("vorbereitungMeldung").textContent = meldungUebersetzen(s.meldung);
+      const sek = s.sekunden || 0, steht = (performance.now() - seit) / 1000;
+      const d = $("vorbereitungDauer");
+      d.textContent = `${Math.floor(sek / 60)}:${String(sek % 60).padStart(2, "0")}` +
+        (steht > 120 ? " · " + t("lange") : "");
+      d.classList.toggle("lange", steht > 120);
+    }
+    await schlafen(250);
+  }
+}
+
+async function warteBis(l, bedingung) {
+  while (!l.aus) {
+    if (l.stand) { const x = bedingung(l.stand); if (x) return x; }
+    await schlafen(250);
+  }
+  return null;
+}
+
+function leinwandLeeren() {
+  document.querySelectorAll(".leinwand .dia").forEach((d) => d.remove());
+  $("vorbereitung").classList.remove("versteckt");
+  $("leinwand").classList.remove("dunkel");
+  $("ueberschrift").textContent = ""; $("satzbox").innerHTML = "";
+  $("fortschritt").textContent = ""; $("wartet").classList.add("versteckt");
+  $("prozent").textContent = "0 %"; $("balkenFuellung").style.width = "0%";
+  $("vorbereitungMeldung").textContent = ""; $("vorbereitungDauer").textContent = "";
+}
+
+function bildLaden(src) {
+  return new Promise((ok) => {
+    if (!src) return ok();
+    const img = new Image(); img.onload = img.onerror = () => ok(); img.src = src;
+  });
+}
+
+let letztesBild = null;
+async function diaWechsel(src, zusatz, spannungspause = 0) {
+  src = src || letztesBild;
+  await bildLaden(src);
+  const alt = document.querySelector(".leinwand .dia.rein");
+  // echtes Projektorgeräusch (Dia raus + nächstes rein in einem); fehlt es, das synthetische Klacken
+  const mitGeraeusch = !!saalSpielen("diawechsel", .6);
+  if (alt) {
+    if (!mitGeraeusch) klack(1);
+    alt.classList.remove("rein"); alt.classList.add("raus");
+    await schlafen(520);
+    alt.remove();
+    if (spannungspause) {   // vor dem Höhepunkt: das Licht wird kurz dunkel, die Musik schwillt an
+      $("leinwand").classList.add("dunkel");
+      await schlafen(spannungspause);
+      $("leinwand").classList.remove("dunkel");
+      await schlafen(450);
+    } else {
+      await schlafen(260);   // kurz das leere Licht
+    }
+  }
+  $("vorbereitung").classList.add("versteckt");
+  const dia = document.createElement("div");
+  dia.className = "dia";
+  if (src) { const img = document.createElement("img"); img.src = src; img.alt = ""; dia.appendChild(img); letztesBild = src; }
+  if (zusatz) dia.appendChild(zusatz);
+  $("leinwand").insertBefore(dia, document.querySelector(".vignette"));
+  void dia.offsetWidth;
+  if (!mitGeraeusch) klack(0.8);
+  dia.classList.add("rein");
+  await schlafen(640);
+}
+
+function untertitel(ueberschrift, saetze) {
+  $("ueberschrift").textContent = ueberschrift || "";
+  $("satzbox").innerHTML = "";
+  (saetze || []).forEach((s, i) => {
+    const span = document.createElement("span");
+    span.className = "satz"; span.textContent = s.text + " "; span.dataset.i = i;
+    $("satzbox").appendChild(span);
+  });
+}
+
+function sprechen(l, dia) {
+  return new Promise((fertig) => {
+    const el = $("stimme");
+    const saetze = [...$("satzbox").children];
+    const markieren = (t) => saetze.forEach((sp, i) => {
+      const s = dia.saetze[i];
+      sp.classList.toggle("jetzt", t >= s.start - 0.05 && t < s.ende + SATZ_LUECKE);
+      sp.classList.toggle("vorbei", t >= s.ende + SATZ_LUECKE);
+    });
+    const ende = () => { el.ontimeupdate = el.onended = el.onerror = null; clearInterval(el._uhr); musikStufe("laut"); fertig(); };
+    if (!dia.ton) {   // ohne Ton: Text so lange zeigen, wie er gesprochen dauern würde
+      const t0 = performance.now();
+      el._uhr = setInterval(() => { const t = (performance.now() - t0) / 1000; markieren(t); if (t > dia.dauer || l.aus) ende(); }, 200);
+      return;
+    }
+    musikStufe("leise");
+    el.src = dia.ton; el.currentTime = 0;
+    el.ontimeupdate = () => markieren(el.currentTime);
+    el.onended = ende; el.onerror = ende;
+    l.stoppeStimme = () => { el.pause(); ende(); };
+    el.play().catch(ende);
+  });
+}
+const SATZ_LUECKE = 0.25;
+
+async function vortragen(l) {
+  // 1. warten, bis Titelbild und die ersten Dias bereitliegen
+  const s0 = await warteBis(l, (s) => (["bereit", "fertig", "fehler", "abgebrochen"].includes(s.phase) ? s : null));
+  if (!s0 || l.aus) return;
+  if (s0.phase === "fehler") throw new Error(s0.fehler || "Der Vortrag konnte nicht vorbereitet werden.");
+
+  // 2. Titel – ohne Sprecher; das Publikum wird leiser, die Musik setzt ein
+  gemurmelLeiser(10);
+  musikStarten(l.modus);
+  zwischenPlanen(l);
+  const titel = document.createElement("div");
+  titel.className = "aufschrift";
+  titel.innerHTML = `<h2></h2><p></p>`;
+  titel.querySelector("h2").textContent = s0.titel; titel.querySelector("p").textContent = s0.untertitel;
+  await diaWechsel(s0.titelbild, titel);
+  l.pos = 0;
+  $("ueberschrift").textContent = ""; $("satzbox").innerHTML = "";
+  await schlafen(TITEL_MS);
+
+  // 3. die Dias
+  for (let k = 1; !l.aus; k++) {
+    let dia = l.stand.dias.find((d) => d.nr === k);
+    if (!dia) {
+      const t0 = performance.now();
+      l.wartestellen = (l.wartestellen || []);
+      l.wartestellen.push({ dia: k, t0 });
+      $("wartet").classList.remove("versteckt");
+      dia = await warteBis(l, (s) => s.dias.find((d) => d.nr === k) || ((s.alles_fertig || ["fehler", "abgebrochen"].includes(s.phase)) ? "ende" : null));
+      $("wartet").classList.add("versteckt");
+      l.wartestellen[l.wartestellen.length - 1].sekunden = Math.round((performance.now() - t0) / 100) / 10;   // zur Diagnose
+    }
+    if (!dia || l.aus) return;
+    if (dia === "ende") break;
+    $("untertitel").style.opacity = 0;
+    if (dia.rolle === "hoehepunkt") {
+      musikStufe("hoch", 1400);
+      await diaWechsel(dia.bild, null, 1800);
+    } else {
+      await diaWechsel(dia.bild);
+    }
+    if (l.aus) return;
+    l.pos = k;
+    l.rolle = dia.rolle;   // beim Höhepunkt bleibt der Saal still
+    effektSetzen(dia.effekt);   // die KI hat je Dia entschieden: Schnee, Regen, Sterne … oder nichts
+    // Figur nur, wenn die KI eine passende gewählt hat – nicht beim Höhepunkt und nicht im Schluss (Bühne frei)
+    const figur = dia.sprite != null ? (l.stand.sprites || [])[dia.sprite] : null;
+    if (figur && figur.url && !["hoehepunkt", "schluss"].includes(dia.rolle)) {
+      setTimeout(() => { if (!l.aus && l.pos === k) figurStarten(figur); }, zufall(2500, 6000));
+    }
+    untertitel(dia.ueberschrift, dia.saetze);
+    $("untertitel").style.opacity = 1;
+    const gesamt = l.stand.letztes || l.stand.geplant;
+    const rest = l.stand.rest_sekunden;
+    $("fortschritt").textContent = t("dia_von", { k, n: gesamt }) + (rest != null ? t("noch", { z: `${Math.max(0, Math.floor(rest / 60))}:${String(Math.max(0, rest % 60)).padStart(2, "0")}` }) : "");
+    await sprechen(l, dia);
+    if (l.aus) return;
+    await schlafen(PAUSE_MS);
+    if (dia.letztes) break;
+  }
+  if (l.aus) return;
+
+  // 4. Schlussbild „Ende“
+  $("untertitel").style.opacity = 0;
+  effektSetzen("keiner");
+  const ende = document.createElement("div");
+  ende.className = "ende"; ende.textContent = t("ende");
+  musikStufe("hoch", 1500);   // die Musik trägt das Ende …
+  clearTimeout(saal.uhr);     // keine Zwischengeräusche mehr – jetzt kommt der Applaus
+  await diaWechsel(l.stand.schlussbild || l.stand.titelbild, ende);
+  saalSpielen("applaus", .6);
+  $("fortschritt").textContent = "";
+  await schlafen(SCHLUSS_MS / 2);
+  if (l.aus) return;
+  musikAus(SCHLUSS_MS / 2 - 300);   // … und klingt dann aus
+  await schlafen(SCHLUSS_MS / 2);
+  if (l.aus) return;
+  luefterAn(false);
+  $("leinwand").classList.add("dunkel");
+  l.aus = true;
+  $("schlussTitel").textContent = t("danke");
+  $("schlussText").textContent = t("zu_ende", { t: l.stand.titel });
+  $("schluss").classList.remove("versteckt");
+}
+
+async function beenden(vomNutzer) {
+  const l = lauf;
+  if (!l || l.aus) { zurStartseite(); return; }
+  l.aus = true;
+  if (l.stoppeStimme) l.stoppeStimme();
+  $("stimme").pause();
+  fetch(`/api/vortrag/${l.id}/stopp`, { method: "POST", body: "{}" }).catch(() => {});
+  luefterAn(false);
+  zurStartseite();
+  musikAus(700);   // kurz ausblenden, dann sicher aus
+}
+
+// Fenster geschlossen oder neu geladen: den Vortrag auf dem Server anhalten (sonst rechnet die Grafikkarte weiter)
+window.addEventListener("pagehide", () => {
+  if (lauf && !lauf.aus) navigator.sendBeacon(`/api/vortrag/${lauf.id}/stopp`, "{}");
+});
+
+function fehlerZeigen(text) {
+  if (!lauf) return;
+  lauf.aus = true;
+  musikAus(800); luefterAn(false);
+  zurStartseite();
+  $("startfehler").textContent = text;
+}
+
+function zurStartseite() {
+  $("schluss").classList.add("versteckt");
+  $("projektor").classList.add("versteckt");
+  $("start").classList.remove("versteckt");
+  $("los").disabled = false;
+  leinwandLeeren();
+  effektSofortAus();
+  figurenWeg();
+  saalStill();
+  letztesBild = null;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  diensteZeigen();
+}
+</script>
+</body>
+</html>

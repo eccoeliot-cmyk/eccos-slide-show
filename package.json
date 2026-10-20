@@ -1,0 +1,27 @@
+{
+  "name": "lms-plugin-diashow-vortrag",
+  "version": "2.0.0",
+  "description": "Diavortrag im Browser: Thema eingeben, Länge wählen – Text, Bilder (ComfyUI/FLUX), Stimme (Qwen3-TTS) und Musik entstehen vorausschauend; Diawechsel wie beim Projektor.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "lms dev",
+    "push": "lms push",
+    "typecheck": "tsc --noEmit"
+  },
+  "lmstudio": {
+    "entryPoints": {
+      "toolsProvider": "./dist/index.js"
+    }
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@lmstudio/sdk": "^1.5.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.8",
+    "typescript": "^5.4.0"
+  }
+}
