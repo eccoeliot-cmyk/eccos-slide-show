@@ -1,4 +1,5 @@
 # Slideshow Presentation — Browser-based Slide Presentation (LM Studio Plugin)
+Install LM Studio and select Qwen 9b within it. Install Python and this plugin. Done.
 
 ![Home screen, projector warming up, and slides from a presentation about soccer](docs/slideshow.jpg)
 
