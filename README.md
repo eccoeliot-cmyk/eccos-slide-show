@@ -4,15 +4,17 @@
 
 ## What it does
 
-Enter your topic in the HTML window—whether it’s a narrative, an educational subject, a historical event like World War II, or a love story.
-Specify the desired duration for the slideshow, and choose whether to include visual effects and music.
-You can even have music generated specifically for your presentation—for example, Western-style music for a cowboy-themed talk.
-Note that this requires VRAM; I recommend at least 12 GB, though it depends on the specific language model used.
-The quality of the stories improves with the capability of the language model.
-For music generation, the plugin downloads the ACE1.5 model.
-For visuals, it uses Flux2 (at least the 4-step distilled version). It also downloads a language model.
-The slideshow begins after a brief warm-up phase (typically taking between 2 and 5 minutes, depending on your computer).
-Once it starts, you’ll see slide transitions, hear ambient sounds like an audience coughing, and watch as sprites appear to match the scene.
+Enter your topic into the HTML window: it could be a story, a technical subject, a historical account, a game, a fairy tale, a romance, or even an episode of *Star Trek: Enterprise* or *Spider-Man*—anything from a narrative or educational content to a historical event like the Second World War.
+
+You determine the duration of the presentation—whether it’s for children, intended to help someone fall asleep, or simply for entertainment.
+
+You decide whether to include visual effects and music.
+
+You can even have music generated specifically for your presentation—for example, Western-style music for a talk about cowboys. Please note that this requires VRAM; I recommend at least 12 GB, though the exact requirement depends on the specific language model being used.
+
+The quality of the stories improves with the capability of the language model. For music generation, the plugin downloads the ACE1.5 model. For visual elements, it uses Flux2 (at least the 4-step "distilled" version). Additionally, a language model is downloaded.
+
+The slideshow begins after a short warm-up phase (which typically lasts between 2 and 5 minutes, depending on your computer). Once it starts, you will see slide transitions, hear ambient sounds—such as coughing, the clinking of glasses, or other background noises—and observe graphical elements like snowflakes, confetti, or stars appearing, perfectly matched to each scene.
 
 Available in multiple languages.
 still in development
