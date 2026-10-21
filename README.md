@@ -1,48 +1,44 @@
-# Slideshow Presentation — Browser-based Slide Presentation (LM Studio Plugin)
-Install LM Studio and select Qwen 9b within it. Install Python and this plugin. Done.
+Slideshow Presentation – Browser-based AI Slide Presentation (LM Studio Plugin)
 
-![Home screen, projector warming up, and slides from a presentation about soccer](docs/slideshow.jpg)
+<img width="1539" height="661" alt="slideshow" src="https://github.com/user-attachments/assets/2e634764-edef-4bfa-a444-0f4694790592" />
 
-## What it does
+Install LM Studio and select the "Qwen 9b" model within it. Install Python and this plugin. That’s it. The application should automatically detect and download any missing components.
 
-Enter your topic into the HTML window: it could be a story, a technical subject, a historical account, a game, a fairy tale, a romance, or even an episode of *Star Trek: Enterprise* or *Spider-Man*—anything from a narrative or educational content to a historical event like the Second World War.
+How It Works
 
-You determine the duration of the presentation—whether it’s for children, intended to help someone fall asleep, or simply for entertainment.
+Enter your topic into the HTML window:
+- Stories, fairy tales
+- Technical or historical subjects
+- Love stories or cartoons
+- Science, sports, wars—ranging from factual to fantastical
+Anything is possible; the quality may vary depending on the language model used.
+
+You determine the duration of the presentation—whether it’s intended for children, designed to help with falling asleep, or simply meant for entertainment or education.
 
 You decide whether to include visual effects and music.
 
-You can even have music generated specifically for your presentation—for example, Western-style music for a talk about cowboys. Please note that this requires VRAM; I recommend at least 12 GB, though the exact requirement depends on the specific language model being used.
+You can even have music generated specifically for your presentation—the system attempts to identify the musical style that best suits your content.
+Please note that this requires VRAM (video memory); I recommend at least 12 GB, though the exact requirement depends on the specific language model being used.
 
-The quality of the stories improves with the capability of the language model. For music generation, the plugin downloads the ACE1.5 model. For visual elements, it uses Flux2 (at least the 4-step "distilled" version). Additionally, a language model is downloaded.
+Image quality depends on the image generation model. I use a distilled version of Flux for the sake of speed.
 
-The slideshow begins after a short warm-up phase (which typically lasts between 2 and 5 minutes, depending on your computer). Once it starts, you will see slide transitions, hear ambient sounds—such as coughing, the clinking of glasses, or other background noises—and observe graphical elements like snowflakes, confetti, or stars appearing, perfectly matched to each scene.
+The slideshow begins after a short warm-up phase (typically lasting between 2 and 5 minutes, depending on your computer). Once it starts, you will see slide transitions, hear ambient sounds—such as coughing, the clinking of glasses, or other background noises—and observe graphical elements like snowflakes, confetti, or stars, all perfectly tailored to the specific scene. These, too, are generated locally by AI.
 
-Available in multiple languages.
-still in development.
-Everything Local.
+Available in multiple languages. Currently under development. Everything runs locally—there is no access to the internet or external AI models. This ensures your presentations remain private. Usage
 
-All graphics, music, and sound are AI-generated.
+Open the page at http://127.0.0.1:8430 (save it as a bookmark!) – or simply say "Open the slideshow" in the LM Studio chat (using the "diashow_oeffnen" tool).
 
-## How to use
+Enter your topic (you can also add specific preferences, such as "for children" or "in a comic-book style"), select the duration, and turn on the projector. It will launch in full-screen mode, though it can, of course, also be viewed in a window.
 
-- Open the page at http://127.0.0.1:8430 (bookmark it!) — or, within the LM Studio chat, simply say:
-"Open the slideshow" (using the `diashow_oeffnen` tool).
-- Enter your topic (feel free to add specific preferences, such as "for children" or "in a comic-book style"), select the duration, and **turn on the projector**.
-- You can also start the presentation by pressing Ctrl+Enter while in the topic input field. ## Installation / After Changes
+You can also start the presentation by pressing Ctrl+Enter within the topic input field. ## Installation / After Making Changes
 
-```powershell
-cd <project-folder>
+cd <project_folder>
 npm install
 npm run build
 lms dev --install
-```
 
-Then, in LM Studio: go to the right-hand sidebar → **"Program"** → **"Plugins"** → and enable `eliot/diashow-vortrag`.
-LM Studio only initializes plugins when there is activity in the chat; once triggered, the slideshow server continues to run independently.
+Afterward, in LM Studio, go to the sidebar on the right → "Program" → "Plugins" → and enable `eliot/diashow-vortrag`. LM Studio only initializes plugins when there is activity in the chat; once the plugin has been triggered, the slideshow server will continue running independently. Files
 
-## Files
-
-```
 diashow/
 ├── manifest.json, package.json, tsconfig.json
 ├── src/                    LM Studio plugin (TypeScript)
@@ -50,24 +46,12 @@ diashow/
 │   ├── server.ts           Starts the server / opens the browser
 │   └── toolsProvider.ts    `diashow_oeffnen` (open slideshow) tool
 ├── vortrag/                The actual slideshow presentation (Python, standard library only)
-│   ├── server.py           Web server + processing pipeline (outline, text, images, voice, music)
+│   ├── server.py           Web server + processing pipeline (outline, text, images, speech, music)
 │   ├── web/index.html      Landing page and projector view
-│   ├── tts_dienst.py       Qwen3 TTS voice service (port 8431, qwen-tts-venv)
-│   ├── erzaehler.py, tts_schnell.py   Voice handling + acceleration (from the roleplay system)
+│   ├── tts_dienst.py       Qwen3 TTS speech service (port 8431, qwen-tts-venv)
+│   ├── erzaehler.py, tts_schnell.py   Speech processing + acceleration (from the role-playing game system)
 │   └── stimmen/            Reference recordings for the five speakers
-├── musik/                  Background music (included in installation)
-└── sounds/                 Venue/ambient sounds—`<type>_<number>.flac` (included in installation)
-```
+├── musik/                  Background music (included in the installation)
+└── sounds/                 Ambient sounds – `<type>_<number>.flac` (included in the installation)
 
-Generated images and audio are stored in: `%USERPROFILE%\LMStudioLocalPlugins\diashow-daten\vortraege\` (the 5 most recent presentations are kept;
-older ones are deleted upon the next startup). Logs: `diashow-daten\server.log`, `diashow-daten\stimmdienst.log`.
-
-## Ports
-
-| Port | Service |
-|---|---|
-| 8430 | Slideshow page |
-| 8431 | Slideshow Qwen3-TTS voice service |
-| 8188 | ComfyUI |
-| 1234 | LM Studio |
-| 8001 | ACE-Step (optional) |
+Generated images and audio files are stored in `%USERPROFILE%\LMStudioLocalPlugins\diashow-daten\vortraege\` (the 5 most recent presentations are kept; older ones are deleted the next time the program starts). Logs: diashow-daten\server.log, diashow-daten\stimmdienst.log.
