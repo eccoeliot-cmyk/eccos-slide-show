@@ -1,4 +1,4 @@
-Slideshow Presentation – Browser-based AI Slide Presentation (LM Studio Plugin)
+Slideshow Presentation – Browser-based AI Slide Presentation (LM Studio Plugin) early access
 
 <img width="1539" height="661" alt="slideshow" src="https://github.com/user-attachments/assets/2e634764-edef-4bfa-a444-0f4694790592" />
 
